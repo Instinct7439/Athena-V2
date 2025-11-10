@@ -1,4 +1,4 @@
-# qa_engine.py — Fixed version with proper error handling
+# qa_engine.py — Fixed for LangChain 0.3+ compatibility
 import streamlit as st
 import requests
 from langchain_community.vectorstores import FAISS
@@ -12,6 +12,8 @@ def make_qa_chain(pdf_text: str, chunk_size: int = 2000, k: int = 3, model: str 
     """
     Offline Q&A system using local Ollama API for LLM inference.
     Returns a callable function that answers questions.
+    
+    Compatible with LangChain 0.3+ (uses invoke() instead of get_relevant_documents())
     """
     
     try:
@@ -42,8 +44,14 @@ def make_qa_chain(pdf_text: str, chunk_size: int = 2000, k: int = 3, model: str 
     def answer(question: str) -> str:
         """Answer questions based on the PDF content"""
         try:
-            # Retrieve most relevant context
-            docs = retriever.get_relevant_documents(question)
+            # Retrieve most relevant context using invoke() for LangChain 0.3+
+            # Try both methods for compatibility
+            try:
+                # Method 1: invoke() (LangChain 0.3+)
+                docs = retriever.invoke(question)
+            except AttributeError:
+                # Method 2: get_relevant_documents() (older versions)
+                docs = retriever.get_relevant_documents(question)
             
             if not docs:
                 return "⚠️ No relevant context found in the document."
@@ -53,7 +61,7 @@ def make_qa_chain(pdf_text: str, chunk_size: int = 2000, k: int = 3, model: str 
             # Build prompt
             prompt = f"""You are Athena, an intelligent AI research assistant.
 Answer the question based strictly on the provided context below.
-If the context doesn't contain enough information, reply: "I don't have enough information from this paper to answer that question."
+If the context doesn't contain enough information, say: "I don't have enough information from this document to answer that question."
 
 Context:
 {context}
