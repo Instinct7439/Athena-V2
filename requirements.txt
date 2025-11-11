@@ -1,4 +1,19 @@
-# Athena - AI Research Assistant Requirements
+# Athena Voice Interface - Free & Offline Dependencies
+
+# ===== CORE VOICE COMPONENTS =====
+
+# Speech-to-Text (Whisper)
+openai-whisper>=20231117
+# Alternative (2-4x faster): faster-whisper>=0.10.0
+
+# Text-to-Speech (Coqui TTS)
+TTS>=0.22.0
+
+# Audio processing
+soundfile>=0.12.1
+sounddevice>=0.4.6  # For recording (optional)
+
+# ===== EXISTING DEPENDENCIES (keep these) =====
 
 # Core Framework
 streamlit>=1.28.0
@@ -16,21 +31,32 @@ faiss-cpu>=1.7.4
 sentence-transformers>=2.2.0
 
 # LLM Integration
-ollama>=0.1.0  # Optional: for Python Ollama client
+ollama>=0.1.0
 
 # Text Processing
 tiktoken>=0.5.0
 
 # Web Search Tools
-ddgs>=6.0.0  # formerly duckduckgo-search
+ddgs>=6.0.0
 arxiv>=2.0.0
 
 # API Requests
 requests>=2.31.0
 
 # Additional Utilities
-python-dotenv>=1.0.0  # For environment variables
+python-dotenv>=1.0.0
 
-# Optional: For better PDF extraction
-# pdfplumber>=0.10.0
-# PyMuPDF>=1.23.0  # fitz
+# ===== OPTIONAL ENHANCEMENTS =====
+
+# For better audio recording in Streamlit
+# streamlit-audiorec>=0.1.0
+
+# For advanced audio processing
+# librosa>=0.10.0
+# pydub>=0.25.1
+
+# ===== SYSTEM DEPENDENCIES =====
+# These may need to be installed via apt/brew:
+# - libsndfile1 (Ubuntu/Debian: sudo apt-get install libsndfile1)
+# - libsndfile (macOS: brew install libsndfile)
+# - ffmpeg (optional, for more audio format support)
