@@ -29,7 +29,7 @@ def research_topic(topic: str, skip_tools: bool = False, fetch_papers: bool = Tr
         return _generate_summary_only(topic, timeout=timeout)
     
     print(f"\n{'='*70}")
-    print(f"🔬 RESEARCHING TOPIC: {topic}")
+    print(f" RESEARCHING TOPIC: {topic}")
     print(f"{'='*70}\n")
     
     # LOG ACTION: Start research
@@ -40,7 +40,7 @@ def research_topic(topic: str, skip_tools: bool = False, fetch_papers: bool = Tr
                       fetch_papers=fetch_papers)
     
     # Step 1: Fetch research papers
-    print("📚 Step 1: Fetching research papers...")
+    print(" Step 1: Fetching research papers...")
     fetcher = PaperFetcher()
     
     try:
@@ -59,12 +59,12 @@ def research_topic(topic: str, skip_tools: bool = False, fetch_papers: bool = Tr
         fetch_duration = time.time() - fetch_start
         
         if not papers:
-            print("⚠️ No papers found, generating summary from LLM knowledge...")
+            print(" No papers found, generating summary from LLM knowledge...")
             tracker.add_reward(-3, "No papers found")
             tracker.add_reward(calc.task_completion(False), "Paper fetch failed")
             return _generate_summary_only(topic, timeout=timeout)
         
-        print(f"✅ Retrieved {len(papers)} papers\n")
+        print(f" Retrieved {len(papers)} papers\n")
         
         # REWARD: Papers found successfully
         tracker.add_reward(calc.task_completion(True), f"Found {len(papers)} papers")
@@ -79,13 +79,13 @@ def research_topic(topic: str, skip_tools: bool = False, fetch_papers: bool = Tr
             tracker.add_reward(3, f"Good papers ({total_citations} citations)")
         
     except Exception as e:
-        print(f"❌ Error fetching papers: {e}")
+        print(f" Error fetching papers: {e}")
         tracker.add_reward(calc.error_penalty(), f"Fetch error: {str(e)}")
-        print("⚠️ Falling back to LLM-only summary...")
+        print(" Falling back to LLM-only summary...")
         return _generate_summary_only(topic, timeout=timeout)
     
     # Step 2: Build context from papers
-    print("🔍 Step 2: Processing paper abstracts...")
+    print(" Step 2: Processing paper abstracts...")
     context_start = time.time()
     tracker.log_action("build_context", num_papers=len(papers))
     
@@ -97,7 +97,7 @@ def research_topic(topic: str, skip_tools: bool = False, fetch_papers: bool = Tr
                       f"Context time: {context_duration:.2f}s")
     
     # Step 3: Generate comprehensive summary
-    print("🧠 Step 3: Generating comprehensive analysis...\n")
+    print(" Step 3: Generating comprehensive analysis...\n")
     summary_start = time.time()
     tracker.log_action("generate_summary", 
                       papers_count=len(papers),
@@ -197,7 +197,7 @@ COMPREHENSIVE RESEARCH SUMMARY:"""
             }
         }
         
-        print("   🤖 Calling Ollama API...")
+        print("    Calling Ollama API...")
         
         # Increased timeout with better error handling
         response = requests.post(OLLAMA_API_URL, json=payload, timeout=timeout)
@@ -205,7 +205,7 @@ COMPREHENSIVE RESEARCH SUMMARY:"""
         llm_duration = time.time() - llm_start
         
         if response.status_code != 200:
-            print(f"   ❌ API Error: {response.status_code}")
+            print(f"    API Error: {response.status_code}")
             tracker.add_reward(calc.error_penalty(), 
                              f"Ollama API error: {response.status_code}")
             return _fallback_summary(papers)
@@ -214,7 +214,7 @@ COMPREHENSIVE RESEARCH SUMMARY:"""
         summary = data.get("response", "").strip()
         
         if not summary:
-            print("   ⚠️ Empty response from LLM")
+            print("    Empty response from LLM")
             tracker.add_reward(-3, "Empty LLM response")
             return _fallback_summary(papers)
         
@@ -226,7 +226,7 @@ COMPREHENSIVE RESEARCH SUMMARY:"""
                           f"Response length: {len(summary)} chars")
         
         # Add paper references at the end
-        full_summary = f"{summary}\n\n{'='*70}\n\n## 📚 SOURCE PAPERS\n\n"
+        full_summary = f"{summary}\n\n{'='*70}\n\n##  SOURCE PAPERS\n\n"
         
         for i, paper in enumerate(papers, 1):
             authors = ", ".join(paper.authors[:3])
@@ -245,14 +245,14 @@ COMPREHENSIVE RESEARCH SUMMARY:"""
             if paper.pdf_url:
                 full_summary += f"- **PDF:** {paper.pdf_url}\n"
         
-        print("   ✅ Summary generated\n")
+        print("    Summary generated\n")
         return full_summary
         
     except requests.exceptions.Timeout:
-        print(f"   ⏱️ Request timed out after {timeout}s")
+        print(f"    Request timed out after {timeout}s")
         tracker.add_reward(calc.error_penalty(), "LLM timeout")
         
-        print("   💡 Suggestions:")
+        print("      Suggestions:")
         print("      - Try a shorter query")
         print("      - Reduce max_papers parameter")
         print("      - Use smaller model: ollama pull llama3.2:1b")
@@ -260,12 +260,12 @@ COMPREHENSIVE RESEARCH SUMMARY:"""
         
         return _fallback_summary(papers)
     except requests.exceptions.ConnectionError as e:
-        print(f"   ❌ Connection Error: Cannot connect to Ollama")
+        print(f"    Connection Error: Cannot connect to Ollama")
         tracker.add_reward(calc.error_penalty(), "Ollama connection error")
-        print("   💡 Make sure Ollama is running (check system tray)")
+        print("    Make sure Ollama is running (check system tray)")
         return _fallback_summary(papers)
     except Exception as e:
-        print(f"   ❌ Error: {e}")
+        print(f"    Error: {e}")
         tracker.add_reward(calc.error_penalty(), f"LLM error: {str(e)}")
         return _fallback_summary(papers)
 
@@ -322,7 +322,7 @@ Be specific, technical yet accessible. Aim for 600-800 words."""
             return f"Error: API returned status {response.status_code}"
             
     except requests.exceptions.Timeout:
-        print(f"⏱️ Request timed out after {timeout}s")
+        print(f" Request timed out after {timeout}s")
         tracker.add_reward(calc.error_penalty(), "Timeout")
         
         return f"""Error: Request timed out after {timeout} seconds.
@@ -394,44 +394,44 @@ def test_ollama_connection():
             models = response.json().get('models', [])
             model_names = [m.get('name', '') for m in models]
             
-            print("✅ Ollama is running")
-            print(f"📦 Available models: {', '.join(model_names) if model_names else 'None'}")
+            print(" Ollama is running")
+            print(f" Available models: {', '.join(model_names) if model_names else 'None'}")
             
             if any('llama3' in name for name in model_names):
-                print("✅ llama3 model is available")
+                print(" llama3 model is available")
                 return True
             else:
-                print("⚠️ llama3 model not found. Run: ollama pull llama3")
+                print(" llama3 model not found. Run: ollama pull llama3")
                 return False
         else:
-            print(f"❌ Ollama returned status {response.status_code}")
+            print(f" Ollama returned status {response.status_code}")
             return False
             
     except requests.exceptions.ConnectionError:
-        print("❌ Cannot connect to Ollama - is it running?")
-        print("💡 Check system tray for Ollama icon or start from Start Menu")
+        print(" Cannot connect to Ollama - is it running?")
+        print(" Check system tray for Ollama icon or start from Start Menu")
         return False
     except Exception as e:
-        print(f"❌ Error checking Ollama: {e}")
+        print(f" Error checking Ollama: {e}")
         return False
 
 
 if __name__ == "__main__":
     print("=" * 70)
-    print("🧪 TESTING ENHANCED RESEARCH FUNCTION WITH TRACKING")
+    print(" TESTING ENHANCED RESEARCH FUNCTION WITH TRACKING")
     print("=" * 70)
     
     # First test Ollama connection
-    print("\n🔧 Testing Ollama connection...\n")
+    print("\n Testing Ollama connection...\n")
     if not test_ollama_connection():
-        print("\n❌ Please start Ollama before running tests")
+        print("\n Please start Ollama before running tests")
         exit(1)
     
     print("\n" + "=" * 70)
     
     test_topic = "transformer attention mechanisms in NLP"
     
-    print(f"\n🔬 Testing with: '{test_topic}'\n")
+    print(f"\n Testing with: '{test_topic}'\n")
     
     result = research_topic(
         topic=test_topic,
@@ -441,7 +441,7 @@ if __name__ == "__main__":
     )
     
     print("\n" + "=" * 70)
-    print("📊 RESULTS")
+    print(" RESULTS")
     print("=" * 70)
     print(result[:1000] + "...\n")
     
@@ -449,4 +449,4 @@ if __name__ == "__main__":
     tracker = get_tracker()
     tracker.display_state()
     
-    print("\n✅ TEST COMPLETE!")
+    print("\n TEST COMPLETE!")
