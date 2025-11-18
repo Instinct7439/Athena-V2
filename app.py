@@ -6,6 +6,17 @@ from qa_engine import make_qa_chain
 from semantic_search import build_semantic_index, search_semantic
 from pdf_utils import extract_text_from_pdf
 from chat_engine import AthenaChat
+from agent_tracker import AgentTracker, RewardCalculator
+from agent_ui import render_agent_dashboard
+
+# At the top - define the tracker getter function
+def get_tracker():
+    if 'agent_tracker' not in st.session_state:
+        st.session_state.agent_tracker = AgentTracker()
+    return st.session_state.agent_tracker
+
+# REMOVE THIS LINE - it's causing the error:
+# result = research_topic(topic, tracker=get_tracker())
 
 # Try to import optional features
 try:
@@ -33,7 +44,7 @@ except ImportError:
 
 # ---------- Page setup ----------
 st.set_page_config(
-    page_title="Athena – AI Research Assistant",
+    page_title="Athena — AI Research Assistant",
     page_icon="🧠",
     layout="wide"
 )
@@ -116,14 +127,14 @@ st.markdown("### _Local AI Research Assistant powered by Ollama_")
 # Show available features
 features = []
 if COMPARISON_AVAILABLE:
-    features.append(" Document Comparison")
+    features.append("📊 Document Comparison")
 if VOICE_AVAILABLE:
-    features.append(" Voice Assistant")
+    features.append("🎤 Voice Assistant")
 if KG_RAG_AVAILABLE:
-    features.append(" Knowledge Graph +  Advanced RAG")
+    features.append("🕸️ Knowledge Graph + 🔥 Advanced RAG")
 
 if features:
-    st.caption(f" Available features: {', '.join(features)}")
+    st.caption(f"✨ Available features: {', '.join(features)}")
 
 st.markdown("---")
 
@@ -140,6 +151,11 @@ if "pdf_uploaded" not in st.session_state:
 if "last_result" not in st.session_state:
     st.session_state.last_result = None
 
+# Initialize agent tracker
+if "agent_tracker" not in st.session_state:
+    st.session_state.agent_tracker = AgentTracker()
+    st.session_state.reward_calc = RewardCalculator()
+
 if COMPARISON_AVAILABLE and "doc_comparison" not in st.session_state:
     st.session_state.doc_comparison = DocumentComparison(model="llama3")
 
@@ -147,16 +163,16 @@ if KG_RAG_AVAILABLE and "advanced_rag" not in st.session_state:
     st.session_state.advanced_rag = AdvancedRAG(chunk_size=800, chunk_overlap=100)
 
 # ---------- Input section ----------
-st.markdown("###  Upload a research paper (PDF) or enter a topic")
+st.markdown("### 📄 Upload a research paper (PDF) or enter a topic")
 uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
 
 topic = st.text_input(
-    " Research Topic",
+    "🔍 Research Topic",
     placeholder="e.g. Recent advances in computer vision"
 )
 
 # ---------- Summarization ----------
-if st.button(" Research", key="research_button"):
+if st.button("🔬 Research", key="research_button"):
     if topic.strip() == "" and not uploaded_file:
         st.warning("Please enter a topic or upload a PDF.")
     else:
@@ -174,7 +190,8 @@ if st.button(" Research", key="research_button"):
                     st.session_state.pdf_uploaded = True
                     st.session_state.pdf_filename = uploaded_file.name
 
-                    splitter = RecursiveCharacterTextSplitter(chunk_size=4000, chunk_overlap=200)
+                    # Reduce chunk size to prevent timeouts
+                    splitter = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=100)
                     chunks = splitter.split_text(text)
 
                     summaries = []
@@ -219,21 +236,22 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
     
     # Build tab list dynamically
     tab_names = [
-        "📄 Summary", 
-        "💬 Q&A", 
+        "📋 Summary", 
+        "❓ Q&A", 
         "🔍 Semantic Search",
-        "🤖 Chat with Athena"
+        "💬 Chat with Athena",
+        "🎯 Agent Tracking"
     ]
     
     # Add Knowledge Graph + RAG tabs
     if KG_RAG_AVAILABLE:
-        tab_names.extend([" Knowledge Graph", " Advanced RAG"])
+        tab_names.extend(["🕸️ Knowledge Graph", "🔥 Advanced RAG"])
     
     if COMPARISON_AVAILABLE:
-        tab_names.append(" Document Comparison")
+        tab_names.append("📊 Document Comparison")
     
     if VOICE_AVAILABLE:
-        tab_names.append(" Voice Assistant")
+        tab_names.append("🎤 Voice Assistant")
     
     tabs = st.tabs(tab_names)
     
@@ -243,7 +261,7 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
     # ---------- Summary TAB ----------
     with tabs[tab_idx]:
         tab_idx += 1
-        st.markdown("###  Research Summary")
+        st.markdown("### 📋 Research Summary")
         st.markdown(f"<div class='result-box'>{st.session_state.last_result}</div>", unsafe_allow_html=True)
 
         st.download_button(
@@ -257,7 +275,7 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
     # ---------- Q&A TAB ----------
     with tabs[tab_idx]:
         tab_idx += 1
-        st.markdown("###  Ask Questions about this Paper")
+        st.markdown("### ❓ Ask Questions about this Paper")
 
         if "qa_chain" not in st.session_state:
             st.info("⏳ Building Q&A index for the uploaded paper... Please wait.")
@@ -292,7 +310,7 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
     # ---------- SEMANTIC SEARCH TAB ----------
     with tabs[tab_idx]:
         tab_idx += 1
-        st.markdown("###  Semantic Search in Paper")
+        st.markdown("### 🔍 Semantic Search in Paper")
 
         if "semantic_index" not in st.session_state:
             with st.spinner("⚙️ Building semantic index..."):
@@ -322,7 +340,7 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
             if not query.strip():
                 st.warning("Please enter a search query.")
             else:
-                with st.spinner(" Performing semantic search..."):
+                with st.spinner("🔎 Performing semantic search..."):
                     try:
                         results = search_semantic(
                             st.session_state.semantic_index, 
@@ -374,7 +392,7 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
     # ---------- CHAT TAB ----------
     with tabs[tab_idx]:
         tab_idx += 1
-        st.markdown("###  Chat with Athena")
+        st.markdown("### 💬 Chat with Athena")
         st.info("💡 Athena has access to your uploaded document and will answer based on its content!")
         
         col1, col2, col3 = st.columns([2, 1, 1])
@@ -405,7 +423,7 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
         st.markdown("---")
         
         if not st.session_state.chat_messages:
-            st.info(" Start a conversation! Ask me anything about research, papers, or AI.")
+            st.info("👋 Start a conversation! Ask me anything about research, papers, or AI.")
         else:
             for msg in st.session_state.chat_messages:
                 with st.chat_message("user"):
@@ -441,8 +459,13 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
         
         if st.session_state.chat_messages:
             st.markdown("---")
-            st.caption(f" {len(st.session_state.chat_messages)} exchanges in this conversation")
-
+            st.caption(f"💬 {len(st.session_state.chat_messages)} exchanges in this conversation")
+    # ---------- AGENT TRACKING TAB (NEW) ----------    
+    
+    with tabs[tab_idx]:
+        tab_idx += 1
+        render_agent_dashboard(st.session_state.agent_tracker)
+    
     # ---------- KNOWLEDGE GRAPH TAB (NEW) ----------
     if KG_RAG_AVAILABLE:
         with tabs[tab_idx]:
@@ -456,7 +479,7 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
     if KG_RAG_AVAILABLE:
         with tabs[tab_idx]:
             tab_idx += 1
-            st.markdown("###  Advanced Multi-Document RAG")
+            st.markdown("### 🔥 Advanced Multi-Document RAG")
             st.info("💡 Ask questions across multiple documents with source attribution and confidence scoring")
             
             rag = st.session_state.advanced_rag
@@ -465,7 +488,7 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
             col1, col2 = st.columns([3, 1])
             
             with col1:
-                st.markdown("#### 📎 Manage Documents")
+                st.markdown("#### 📚 Manage Documents")
             
             with col2:
                 if st.button("🗑️ Clear All", key="clear_rag"):
@@ -490,10 +513,10 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
             summary = rag.get_document_summary()
             
             if summary['total_documents'] > 0:
-                st.markdown(f"** Loaded Documents:** {summary['total_documents']}")
+                st.markdown(f"**📚 Loaded Documents:** {summary['total_documents']}")
                 
                 for doc in summary['documents']:
-                    with st.expander(f" {doc['title']}", expanded=False):
+                    with st.expander(f"📄 {doc['title']}", expanded=False):
                         st.write(f"**Length:** {doc['length']:,} characters")
                         st.write(f"**ID:** {doc['id']}")
                         if doc.get('metadata'):
@@ -502,7 +525,7 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
                 st.markdown("---")
                 
                 # Query interface
-                st.markdown("####  Ask Questions Across Documents")
+                st.markdown("#### 🔎 Ask Questions Across Documents")
                 
                 col1, col2 = st.columns([3, 1])
                 
@@ -526,9 +549,9 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
                 else:
                     doc_filter = None
                 
-                if st.button(" Answer with RAG", type="primary", key="rag_answer"):
+                if st.button("💡 Answer with RAG", type="primary", key="rag_answer"):
                     if rag_query:
-                        with st.spinner(" Retrieving context and generating answer..."):
+                        with st.spinner("🔎 Retrieving context and generating answer..."):
                             result = rag.answer_with_context(
                                 rag_query,
                                 k=k_contexts,
@@ -547,7 +570,7 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
                         st.markdown(f"<div class='rag-box'>{result['answer']}</div>", unsafe_allow_html=True)
                         
                         # Display sources
-                        st.markdown("###  Sources")
+                        st.markdown("### 📚 Sources")
                         for source in result['sources']:
                             with st.expander(
                                 f"[{source['source_id']}] {source['doc_title']} "
@@ -563,8 +586,8 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
                 # Comparison feature
                 if summary['total_documents'] >= 2:
                     st.markdown("---")
-                    st.markdown("###  Compare Documents")
-                    st.info(" Compare multiple documents on a specific topic to find similarities and differences")
+                    st.markdown("### 📊 Compare Documents")
+                    st.info("💡 Compare multiple documents on a specific topic to find similarities and differences")
                     
                     comparison_query = st.text_input(
                         "Topic to compare",
@@ -580,9 +603,9 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
                         key="docs_to_compare"
                     )
                     
-                    if st.button(" Compare Documents", key="compare_docs"):
+                    if st.button("🔬 Compare Documents", key="compare_docs"):
                         if comparison_query and len(docs_to_compare) >= 2:
-                            with st.spinner(" Analyzing differences and similarities..."):
+                            with st.spinner("🔎 Analyzing differences and similarities..."):
                                 comp_result = rag.compare_documents(
                                     comparison_query,
                                     doc_ids=docs_to_compare,
@@ -590,7 +613,7 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
                                 )
                             
                             if 'comparison' in comp_result:
-                                st.markdown("###  Comparison Analysis")
+                                st.markdown("### 📊 Comparison Analysis")
                                 st.markdown(f"<div class='comparison-box'>{comp_result['comparison']}</div>", unsafe_allow_html=True)
                                 
                                 st.markdown("**Documents Compared:**")
@@ -607,8 +630,8 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
                 # Concept tracking
                 if summary['total_documents'] >= 2:
                     st.markdown("---")
-                    st.markdown("###  Track Concepts Across Documents")
-                    st.info(" See how a specific concept appears and evolves across multiple papers")
+                    st.markdown("### 🕸️ Track Concepts Across Documents")
+                    st.info("💡 See how a specific concept appears and evolves across multiple papers")
                     
                     concept_query = st.text_input(
                         "Concept to track",
@@ -616,13 +639,13 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
                         key="concept_query_input"
                     )
                     
-                    if st.button(" Track Concept", key="track_concept"):
+                    if st.button("🔍 Track Concept", key="track_concept"):
                         if concept_query:
-                            with st.spinner(" Tracing concept across documents..."):
+                            with st.spinner("🔎 Tracing concept across documents..."):
                                 conn_result = rag.find_connections(concept_query)
                             
                             if 'analysis' in conn_result:
-                                st.markdown("###  Concept Analysis")
+                                st.markdown("### 🕸️ Concept Analysis")
                                 
                                 st.markdown(f"**Concept:** {conn_result['concept']}")
                                 st.markdown(f"**Found in:** {len(conn_result['documents'])} documents")
@@ -641,7 +664,7 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
             
             else:
                 st.warning("⚠️ No documents loaded. Add the current document using the button above.")
-                st.markdown("**📖 How to use Advanced RAG:**")
+                st.markdown("**🚀 How to use Advanced RAG:**")
                 st.markdown("1. Upload and research a paper")
                 st.markdown("2. Click '➕ Add Current Document to RAG'")
                 st.markdown("3. Upload more papers and add them")
@@ -652,10 +675,10 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
     if COMPARISON_AVAILABLE:
         with tabs[tab_idx]:
             tab_idx += 1
-            st.markdown("###  Document Comparison")
+            st.markdown("### 📊 Document Comparison")
             st.info("💡 Upload multiple PDFs to compare them side-by-side and find similarities/differences!")
             
-            st.markdown("#### 📎 Upload Documents to Compare")
+            st.markdown("#### 📚 Upload Documents to Compare")
             
             col1, col2 = st.columns(2)
             
@@ -665,7 +688,7 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
             with col2:
                 doc2_file = st.file_uploader("Document 2", type="pdf", key="doc2_upload")
             
-            if st.button(" Compare Documents", key="compare_button"):
+            if st.button("🔬 Compare Documents", key="compare_button"):
                 if not doc1_file or not doc2_file:
                     st.warning("⚠️ Please upload both documents to compare.")
                 else:
@@ -683,7 +706,7 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
                             
                             st.success("✅ Documents loaded successfully!")
                             
-                            with st.spinner(" Comparing documents..."):
+                            with st.spinner("🔎 Comparing documents..."):
                                 comparison_result = st.session_state.doc_comparison.compare_documents(
                                     doc1_file.name,
                                     doc2_file.name
@@ -695,23 +718,23 @@ if st.session_state.pdf_uploaded and st.session_state.last_result:
             
             if "comparison_result" in st.session_state and st.session_state.comparison_result:
                 st.markdown("---")
-                st.markdown("###  Comparison Results")
+                st.markdown("### 📊 Comparison Results")
                 
                 result = st.session_state.comparison_result
                 
-                st.markdown("####  Summary")
+                st.markdown("#### 📋 Summary")
                 st.markdown(f"<div class='comparison-box'>{result['summary']}</div>", unsafe_allow_html=True)
                 
-                st.markdown("####  Similarities")
+                st.markdown("#### 🤝 Similarities")
                 with st.expander("View Common Topics", expanded=True):
                     st.markdown(f"<div class='result-box'>{result['similarities']}</div>", unsafe_allow_html=True)
                 
-                st.markdown("####  Key Differences")
+                st.markdown("#### ⚡ Key Differences")
                 with st.expander("View Unique Aspects", expanded=True):
                     st.markdown(f"<div class='result-box'>{result['differences']}</div>", unsafe_allow_html=True)
                 
                 if result.get('recommendations'):
-                    st.markdown("####  Recommendations")
+                    st.markdown("#### 💡 Recommendations")
                     with st.expander("View Insights"):
                         st.markdown(f"<div class='result-box'>{result['recommendations']}</div>", unsafe_allow_html=True)
                 
@@ -758,24 +781,24 @@ with st.sidebar:
     st.markdown("### 🧠 Athena Features")
     
     st.markdown("#### Core Features")
-    st.markdown("-  Document Summarization")
-    st.markdown("-  Q&A System")
-    st.markdown("-  Semantic Search")
-    st.markdown("-  Chat Interface")
+    st.markdown("- 📋 Document Summarization")
+    st.markdown("- ❓ Q&A System")
+    st.markdown("- 🔍 Semantic Search")
+    st.markdown("- 💬 Chat Interface")
     
     if KG_RAG_AVAILABLE:
         st.markdown("#### Advanced Features")
-        st.markdown("-  Knowledge Graphs")
-        st.markdown("-  Multi-Document RAG")
-        st.markdown("-  Cross-Paper Comparison")
-        st.markdown("-  Concept Tracking")
+        st.markdown("- 🕸️ Knowledge Graphs")
+        st.markdown("- 🔥 Multi-Document RAG")
+        st.markdown("- 📊 Cross-Paper Comparison")
+        st.markdown("- 🔗 Concept Tracking")
     
     if COMPARISON_AVAILABLE or VOICE_AVAILABLE:
         st.markdown("#### Optional Features")
         if COMPARISON_AVAILABLE:
-            st.markdown("-  Document Comparison")
+            st.markdown("- 📊 Document Comparison")
         if VOICE_AVAILABLE:
-            st.markdown("-  Voice Assistant")
+            st.markdown("- 🎤 Voice Assistant")
     
     st.markdown("---")
     st.markdown("### ℹ️ About")
@@ -813,7 +836,7 @@ with st.sidebar:
     # Session stats
     if st.session_state.pdf_uploaded:
         st.markdown("---")
-        st.markdown("###  Session Stats")
+        st.markdown("### 📊 Session Stats")
         st.write(f"**Document:** {st.session_state.get('pdf_filename', 'N/A')}")
         st.write(f"**Text length:** {len(st.session_state.pdf_text):,} chars")
         
@@ -835,17 +858,17 @@ with st.sidebar:
     st.markdown("### 💡 Quick Tips")
     
     tips = [
-        " Start by uploading a PDF or entering a topic",
-        " Use Q&A for specific factual questions",
-        " Use Semantic Search to explore topics",
-        " Use Chat for conversational exploration",
+        "📄 Start by uploading a PDF or entering a topic",
+        "❓ Use Q&A for specific factual questions",
+        "🔍 Use Semantic Search to explore topics",
+        "💬 Use Chat for conversational exploration",
     ]
     
     if KG_RAG_AVAILABLE:
         tips.extend([
-            " Build Knowledge Graphs to visualize entities",
-            " Add multiple papers to RAG for comparison",
-            " Track concepts across documents"
+            "🕸️ Build Knowledge Graphs to visualize entities",
+            "🔥 Add multiple papers to RAG for comparison",
+            "🔗 Track concepts across documents"
         ])
     
     for tip in tips:

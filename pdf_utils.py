@@ -1,33 +1,25 @@
-# pdf_utils.py - Ultimate PDF text extraction and cleaning
+# pdf_utils.py - Updated with agent tracking
+
 import PyPDF2
 import re
+import time
+from tracker_integration import get_tracker, get_calc
 
 
 def clean_extracted_text(text: str) -> str:
     """
     Smart cleaning for PDFs with character spacing.
-    Handles: "M a y  2 0 2 5" -> "May 2025"
-    Preserves: Normal word spacing
     """
     
     # Step 1: Fix character spacing aggressively
     for _ in range(15):
         text = re.sub(r'([A-Za-z0-9]) ([A-Za-z0-9])', r'\1\2', text)
     
-    # Step 2: Add spaces back where needed (after punctuation, etc.)
-    # Add space after period if followed by capital letter
+    # Step 2: Add spaces back where needed
     text = re.sub(r'\.([A-Z])', r'. \1', text)
-    
-    # Add space after comma if followed by letter
     text = re.sub(r',([A-Za-z])', r', \1', text)
-    
-    # Add space before opening parenthesis if preceded by letter
     text = re.sub(r'([A-Za-z])\(', r'\1 (', text)
-    
-    # Add space after closing parenthesis if followed by letter
     text = re.sub(r'\)([A-Za-z])', r') \1', text)
-    
-    # Add space between lowercase and uppercase (camelCase handling)
     text = re.sub(r'([a-z])([A-Z])', r'\1 \2', text)
     
     # Clean up excessive whitespace
@@ -37,11 +29,35 @@ def clean_extracted_text(text: str) -> str:
     return text.strip()
 
 
-def extract_text_from_pdf(pdf_file) -> str:
+def extract_text_from_pdf(pdf_file, track: bool = True) -> str:
     """
-    Extract text from PDF with aggressive cleaning.
-    Works with both file paths and uploaded file objects.
+    Extract text from PDF with aggressive cleaning and agent tracking.
+    
+    Args:
+        pdf_file: File path or file-like object
+        track: Whether to log actions and rewards (default: True)
+    
+    Returns:
+        Cleaned text content
     """
+    tracker = get_tracker()
+    calc = get_calc()
+    
+    # Get filename for logging
+    if hasattr(pdf_file, 'name'):
+        filename = pdf_file.name
+    elif isinstance(pdf_file, str):
+        filename = pdf_file.split('/')[-1]
+    else:
+        filename = "unknown.pdf"
+    
+    # LOG ACTION: Start extraction
+    start_time = time.time()
+    if track:
+        tracker.log_action("extract_pdf", 
+                          filename=filename,
+                          file_type="pdf")
+    
     try:
         # Handle both file path and file-like object
         if isinstance(pdf_file, str):
@@ -49,40 +65,101 @@ def extract_text_from_pdf(pdf_file) -> str:
         else:
             pdf_reader = PyPDF2.PdfReader(pdf_file)
         
+        num_pages = len(pdf_reader.pages)
+        
+        if track:
+            tracker.log_action("read_pdf_pages", 
+                              num_pages=num_pages,
+                              filename=filename)
+        
         text = ""
         for page_num, page in enumerate(pdf_reader.pages):
             page_text = page.extract_text()
             if page_text:
                 text += page_text + "\n"
         
-        print(f"📄 Raw extraction: {len(text)} chars")
-        print(f"🔍 Sample raw text:\n{text[:100]}")
+        extraction_duration = time.time() - start_time
+        
+        print(f"📄 Raw extraction: {len(text)} chars from {num_pages} pages")
+        
+        if not text.strip():
+            if track:
+                tracker.add_reward(calc.error_penalty(), 
+                                 "Empty PDF or encrypted")
+            raise ValueError("No text could be extracted from PDF")
+        
+        # REWARD: Successful extraction
+        if track:
+            tracker.add_reward(calc.task_completion(True), 
+                             f"Extracted {len(text)} chars from {num_pages} pages")
+            tracker.add_reward(calc.response_time(extraction_duration, 5.0),
+                             f"Extraction time: {extraction_duration:.2f}s")
         
         # Apply aggressive cleaning
-        cleaned_text = clean_extracted_text(text)
+        clean_start = time.time()
+        if track:
+            tracker.log_action("clean_text", 
+                              original_length=len(text))
         
-        print(f"✅ After cleaning: {len(cleaned_text)} chars")
-        print(f"🔍 Sample cleaned: {cleaned_text[:100]}")
+        cleaned_text = clean_extracted_text(text)
+        clean_duration = time.time() - clean_start
+        
+        print(f"✨ After cleaning: {len(cleaned_text)} chars")
         
         # Sanity check - make sure we didn't destroy the text
         if len(cleaned_text) < len(text) * 0.2:
             print("⚠️ Cleaning removed too much text, using raw version")
-            return text
+            if track:
+                tracker.add_reward(-2, "Cleaning too aggressive, reverted")
+            cleaned_text = text
+        else:
+            if track:
+                tracker.add_reward(calc.task_completion(True), 
+                                 "Text cleaned successfully")
+                tracker.add_reward(calc.response_time(clean_duration, 1.0),
+                                 f"Clean time: {clean_duration:.2f}s")
+        
+        # Quality rewards based on content
+        if track:
+            if len(cleaned_text) > 5000:
+                tracker.add_reward(5, "Large document (>5000 chars)")
+            elif len(cleaned_text) > 1000:
+                tracker.add_reward(3, "Medium document (>1000 chars)")
+            else:
+                tracker.add_reward(1, "Small document")
+            
+            # Bonus for multi-page documents
+            if num_pages > 10:
+                tracker.add_reward(3, f"Multi-page document ({num_pages} pages)")
+        
+        total_duration = time.time() - start_time
+        print(f"⏱️ Total PDF processing: {total_duration:.2f}s")
         
         return cleaned_text
         
     except Exception as e:
         print(f"❌ Error extracting PDF: {e}")
+        if track:
+            tracker.add_reward(calc.error_penalty(), 
+                             f"PDF extraction failed: {str(e)}")
         raise
 
 
-def extract_text_with_pdfplumber(pdf_file):
+def extract_text_with_pdfplumber(pdf_file, track: bool = True):
     """
-    Alternative extraction using pdfplumber.
-    Install: pip install pdfplumber
+    Alternative extraction using pdfplumber with tracking.
     """
+    tracker = get_tracker()
+    calc = get_calc()
+    
+    if track:
+        tracker.log_action("extract_with_pdfplumber",
+                          method="pdfplumber")
+    
     try:
         import pdfplumber
+        
+        start = time.time()
         
         if isinstance(pdf_file, str):
             pdf = pdfplumber.open(pdf_file)
@@ -97,18 +174,31 @@ def extract_text_with_pdfplumber(pdf_file):
         
         pdf.close()
         
+        duration = time.time() - start
+        
         print(f"✅ PDFPlumber extracted: {len(text)} chars")
+        
+        if track:
+            tracker.add_reward(calc.task_completion(True), 
+                             "PDFPlumber extraction successful")
+            tracker.add_reward(calc.response_time(duration, 5.0),
+                             f"Time: {duration:.2f}s")
+        
         return clean_extracted_text(text)
         
     except ImportError:
         print("⚠️ pdfplumber not installed. Using PyPDF2 instead.")
-        return extract_text_from_pdf(pdf_file)
+        if track:
+            tracker.add_reward(-1, "PDFPlumber not available")
+        return extract_text_from_pdf(pdf_file, track=track)
     except Exception as e:
         print(f"❌ PDFPlumber error: {e}")
+        if track:
+            tracker.add_reward(calc.error_penalty(), 
+                             f"PDFPlumber error: {str(e)}")
         raise
 
 
-# Test function
 if __name__ == "__main__":
     import sys
     
@@ -147,4 +237,8 @@ if __name__ == "__main__":
         print(f"\n📄 Testing on: {pdf_path}")
         text = extract_text_from_pdf(pdf_path)
         print(f"\n✅ Extracted {len(text)} characters")
-        print(f"\n📝 First 500 characters:\n{text[:500]}")
+        print(f"\n🔍 First 500 characters:\n{text[:500]}")
+        
+        # Show tracker state
+        tracker = get_tracker()
+        tracker.display_state()
