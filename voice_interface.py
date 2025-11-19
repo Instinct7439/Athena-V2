@@ -1,13 +1,11 @@
-# voice_interface.py - Robust Voice Interface with Debugging
+# voice_interface.py - Robust Voice Interface (Theme-aware, no icons)
 
 import streamlit as st
 from voice_engine import AthenaVoice
 import tempfile
 import os
 from datetime import datetime
-import base64
-import io
-import wave
+from theme_manager import ThemeManager
 
 
 class VoiceInterface:
@@ -15,7 +13,7 @@ class VoiceInterface:
     
     def __init__(self):
         if 'voice_engine' not in st.session_state:
-            with st.spinner("🎙️ Loading voice engine..."):
+            with st.spinner("Loading voice engine..."):
                 try:
                     st.session_state.voice_engine = AthenaVoice(
                         whisper_model="base",
@@ -23,7 +21,7 @@ class VoiceInterface:
                     )
                     st.session_state.voice_ready = True
                 except Exception as e:
-                    st.error(f"❌ Failed to load voice engine: {e}")
+                    st.error(f"Failed to load voice engine: {e}")
                     st.session_state.voice_ready = False
         
         self.voice = st.session_state.voice_engine if st.session_state.get('voice_ready') else None
@@ -47,25 +45,20 @@ class VoiceInterface:
             
             # Verify file was created
             if not os.path.exists(audio_path):
-                st.error(f"❌ Failed to create file at: {audio_path}")
+                st.error(f"Failed to create file at: {audio_path}")
                 return None
             
             file_size = os.path.getsize(audio_path)
             
             if file_size == 0:
-                st.error("❌ Audio file is empty (0 bytes)")
+                st.error("Audio file is empty (0 bytes)")
                 return None
             
-            st.success(f"✅ Audio saved: {file_size:,} bytes")
-            print(f"✅ Audio file created:")
-            print(f"   Path: {audio_path}")
-            print(f"   Size: {file_size:,} bytes")
-            print(f"   Exists: {os.path.exists(audio_path)}")
-            
+            st.success(f"Audio saved: {file_size:,} bytes")
             return audio_path
             
         except Exception as e:
-            st.error(f"❌ Error saving audio: {e}")
+            st.error(f"Error saving audio: {e}")
             import traceback
             st.code(traceback.format_exc())
             return None
@@ -90,7 +83,7 @@ class VoiceInterface:
                 'error': 'Audio file is empty (0 bytes)'
             }
         
-        st.info(f"📊 File ready: {os.path.basename(audio_path)} ({file_size:,} bytes)")
+        st.info(f"File ready: {os.path.basename(audio_path)} ({file_size:,} bytes)")
         
         # Check 3: Voice engine ready
         if not self.voice:
@@ -102,19 +95,19 @@ class VoiceInterface:
         
         # Transcribe
         try:
-            with st.spinner("🎧 Transcribing (this may take 10-30 seconds)..."):
+            with st.spinner("Transcribing (this may take 10-30 seconds)..."):
                 result = self.voice.transcribe_audio(audio_path)
             
             if result.get('success'):
-                st.success(f"✅ Transcribed: {result.get('confidence', 0):.0%} confidence")
+                st.success(f"Transcribed: {result.get('confidence', 0):.0%} confidence")
                 return result
             else:
-                st.error(f"❌ Transcription failed: {result.get('error', 'Unknown error')}")
+                st.error(f"Transcription failed: {result.get('error', 'Unknown error')}")
                 return result
                 
         except Exception as e:
             error_msg = f"Transcription exception: {str(e)}"
-            st.error(f"❌ {error_msg}")
+            st.error(f"{error_msg}")
             import traceback
             st.code(traceback.format_exc())
             
@@ -127,27 +120,27 @@ class VoiceInterface:
     def speak_response(self, text: str) -> str:
         """Generate speech with error handling"""
         if not self.voice:
-            st.error("❌ Voice engine not available")
+            st.error("Voice engine not available")
             return None
         
         # Limit text length for faster TTS
         if len(text) > 500:
             text = text[:500] + "..."
-            st.info("📝 Response truncated to 500 characters for voice")
+            st.info("Response truncated to 500 characters for voice")
         
         try:
-            with st.spinner("🔊 Generating speech (requires internet)..."):
+            with st.spinner("Generating speech (requires internet)..."):
                 audio_file = self.voice.speak(text)
             
             if audio_file and os.path.exists(audio_file):
-                st.success("✅ Voice response generated!")
+                st.success("Voice response generated!")
                 return audio_file
             else:
-                st.warning("⚠️ TTS failed. Check internet connection.")
+                st.warning("TTS failed. Check internet connection.")
                 return None
                 
         except Exception as e:
-            st.error(f"❌ TTS error: {e}")
+            st.error(f"TTS error: {e}")
             return None
     
     def play_audio(self, audio_file: str):
@@ -158,13 +151,15 @@ class VoiceInterface:
                     audio_bytes = f.read()
                 st.audio(audio_bytes, format='audio/mp3')
             except Exception as e:
-                st.error(f"❌ Error playing audio: {e}")
+                st.error(f"Error playing audio: {e}")
 
 
 def render_voice_tab():
     """Voice interface with robust error handling"""
     
-    st.markdown("### 🎙️ Voice Assistant")
+    theme = ThemeManager.get_current_theme()
+    
+    st.markdown(f"<h3 style='color: {theme['accent']};'>Voice Assistant</h3>", unsafe_allow_html=True)
     st.markdown("**Ask questions using your voice!**")
     
     # Check dependencies
@@ -172,12 +167,12 @@ def render_voice_tab():
         voice_interface = VoiceInterface()
         
         if not st.session_state.get('voice_ready'):
-            st.error("❌ Voice engine failed to initialize")
-            st.info("💡 Make sure you have installed: `pip install openai-whisper gtts`")
+            st.error("Voice engine failed to initialize")
+            st.info("Make sure you have installed: `pip install openai-whisper gtts`")
             return
             
     except Exception as e:
-        st.error(f"❌ Voice interface error: {e}")
+        st.error(f"Voice interface error: {e}")
         st.info("Install dependencies: `pip install openai-whisper gtts`")
         return
     
@@ -186,21 +181,21 @@ def render_voice_tab():
         st.session_state.voice_history = []
     
     # Settings
-    with st.expander("⚙️ Settings"):
+    with st.expander("Settings"):
         col1, col2 = st.columns(2)
         
         with col1:
-            auto_play = st.checkbox("🔊 Auto-play", value=True)
+            auto_play = st.checkbox("Auto-play", value=True)
             query_mode = st.selectbox(
                 "Mode",
-                ["💬 Chat", "🔍 Search", "❓ Q&A"],
+                ["Chat", "Search", "Q&A"],
                 help="Chat: Conversation | Search: Find sections | Q&A: Precise answers"
             )
         
         with col2:
-            show_text = st.checkbox("📝 Show text", value=True)
+            show_text = st.checkbox("Show text", value=True)
     
-    if st.button("🗑️ Clear History"):
+    if st.button("Clear History"):
         st.session_state.voice_history = []
         st.success("Cleared!")
         st.rerun()
@@ -209,11 +204,11 @@ def render_voice_tab():
     
     # History
     if st.session_state.voice_history:
-        st.markdown("### 💬 Conversation History")
+        st.markdown(f"<h3 style='color: {theme['accent']};'>Conversation History</h3>", unsafe_allow_html=True)
         
         for exchange in st.session_state.voice_history[-3:]:  # Show last 3
             with st.container():
-                st.markdown(f"**🎤 You ({exchange['timestamp']}):** {exchange['question'][:100]}")
+                st.markdown(f"**You ({exchange['timestamp']}):** {exchange['question'][:100]}")
                 
                 if show_text:
                     with st.expander("View Response"):
@@ -225,13 +220,13 @@ def render_voice_tab():
                 st.markdown("---")
     
     # Input section
-    st.markdown("### 🎤 Record Your Question")
+    st.markdown(f"<h3 style='color: {theme['accent']};'>Record Your Question</h3>", unsafe_allow_html=True)
     
     # Mode info
     mode_help = {
-        "💬 Chat": "💬 Natural conversation about the document",
-        "🔍 Search": "🔍 Find specific sections or topics",
-        "❓ Q&A": "❓ Get precise factual answers"
+        "Chat": "Natural conversation about the document",
+        "Search": "Find specific sections or topics",
+        "Q&A": "Get precise factual answers"
     }
     st.info(mode_help[query_mode])
     
@@ -250,19 +245,19 @@ def render_voice_tab():
     
     # Process audio
     if audio_data is not None:
-        st.success("✅ Audio recorded!")
+        st.success("Audio recorded!")
         
         # Debug info
-        with st.expander("🔍 Debug Info"):
+        with st.expander("Debug Info"):
             st.write(f"Audio data type: {type(audio_data)}")
             st.write(f"Audio data size: {len(audio_data.getvalue())} bytes")
         
-        if st.button("🎧 Transcribe & Answer", key="process_audio", type="primary"):
+        if st.button("Transcribe & Answer", key="process_audio", type="primary"):
             # Save audio
             audio_path = voice_interface.save_uploaded_audio(audio_data)
             
             if not audio_path:
-                st.error("❌ Failed to save audio file")
+                st.error("Failed to save audio file")
                 return
             
             # Transcribe
@@ -270,7 +265,7 @@ def render_voice_tab():
             
             if result['success'] and result['text'].strip():
                 question = result['text']
-                st.markdown(f"**📝 You asked:** {question}")
+                st.markdown(f"**You asked:** {question}")
                 
                 # Process query
                 process_query(question, voice_interface, query_mode, auto_play)
@@ -281,12 +276,12 @@ def render_voice_tab():
                 except:
                     pass
             else:
-                st.error(f"❌ Transcription failed: {result.get('error', 'Unknown error')}")
-                st.info("💡 Try speaking more clearly or check your microphone")
+                st.error(f"Transcription failed: {result.get('error', 'Unknown error')}")
+                st.info("Try speaking more clearly or check your microphone")
     
     # Process text input
     if text_input.strip():
-        if st.button("💬 Answer (with voice)", key="process_text", type="primary"):
+        if st.button("Answer (with voice)", key="process_text", type="primary"):
             process_query(text_input, voice_interface, query_mode, auto_play)
 
 
@@ -294,11 +289,13 @@ def process_query(question: str, voice_interface: VoiceInterface,
                  query_mode: str, auto_play: bool):
     """Process query and generate response"""
     
+    theme = ThemeManager.get_current_theme()
+    
     # Get response based on mode
-    if query_mode == "💬 Chat":
+    if query_mode == "Chat":
         response_text = get_chat_response(question)
         mode_label = "Chat"
-    elif query_mode == "🔍 Search":
+    elif query_mode == "Search":
         response_text = get_search_response(question)
         mode_label = "Search"
     else:
@@ -309,7 +306,7 @@ def process_query(question: str, voice_interface: VoiceInterface,
         return
     
     # Display response
-    st.markdown(f"**🧠 Athena ({mode_label}):**")
+    st.markdown(f"<h4 style='color: {theme['accent']};'>Athena ({mode_label}):</h4>", unsafe_allow_html=True)
     with st.expander("View Full Response", expanded=True):
         st.success(response_text)
     
@@ -328,30 +325,30 @@ def process_query(question: str, voice_interface: VoiceInterface,
         
         # Play
         if auto_play:
-            st.markdown("**🔊 Playing response...**")
+            st.markdown("**Playing response...**")
             voice_interface.play_audio(audio_file)
         else:
-            st.markdown("**🔊 Click to play:**")
+            st.markdown("**Click to play:**")
             voice_interface.play_audio(audio_file)
 
 
 def get_chat_response(question: str) -> str:
     """Get chat response"""
     if 'athena_chat' not in st.session_state:
-        st.error("❌ Upload a document first!")
+        st.error("Upload a document first!")
         return None
     
-    with st.spinner("💭 Thinking..."):
+    with st.spinner("Thinking..."):
         return st.session_state.athena_chat.chat(question)
 
 
 def get_search_response(question: str) -> str:
     """Get semantic search response"""
     if 'semantic_index' not in st.session_state:
-        st.error("❌ Build semantic index first (Semantic Search tab)")
+        st.error("Build semantic index first (Semantic Search tab)")
         return None
     
-    with st.spinner("🔍 Searching..."):
+    with st.spinner("Searching..."):
         from semantic_search import search_semantic
         results = search_semantic(st.session_state.semantic_index, question, k=3)
         
@@ -368,14 +365,8 @@ def get_search_response(question: str) -> str:
 def get_qa_response(question: str) -> str:
     """Get Q&A response"""
     if 'qa_chain' not in st.session_state:
-        st.error("❌ Build Q&A index first (Q&A tab)")
+        st.error("Build Q&A index first (Q&A tab)")
         return None
     
-    with st.spinner("❓ Finding answer..."):
+    with st.spinner("Finding answer..."):
         return st.session_state.qa_chain(question)
-
-
-if __name__ == "__main__":
-    st.set_page_config(page_title="Voice Test", page_icon="🎤")
-    st.title("🎤 Voice Interface Test")
-    render_voice_tab()

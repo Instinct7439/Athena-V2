@@ -59,7 +59,7 @@ class AdvancedRAG:
         self.vectorstores: Dict[str, FAISS] = {}
         self.global_vectorstore = None
         
-        print("✅ Advanced RAG initialized")
+        print(" Advanced RAG initialized")
     
     def add_document(self, doc_id: str, title: str, content: str, metadata: Dict = None):
         """Add document to the RAG system"""
@@ -99,7 +99,7 @@ class AdvancedRAG:
             metadatas=metadatas
         )
         
-        print(f"✅ Added document: {title} ({len(chunks)} chunks)")
+        print(f" Added document: {title} ({len(chunks)} chunks)")
         
         # Rebuild global index
         self._rebuild_global_index()
@@ -133,7 +133,7 @@ class AdvancedRAG:
                 self.embeddings,
                 metadatas=all_metadatas
             )
-            print(f"✅ Global index rebuilt: {len(all_texts)} total chunks")
+            print(f" Global index rebuilt: {len(all_texts)} total chunks")
     
     def retrieve_context(self, query: str, k: int = 5, doc_ids: List[str] = None) -> List[Tuple]:
         """
@@ -402,13 +402,13 @@ Provide:
         }
 
 
-# =====================================================================
-# 🧪 TEST SUITE
-# =====================================================================
+
+#TEST SUITE
+
 
 if __name__ == "__main__":
     print("=" * 70)
-    print("🧪 ADVANCED RAG SYSTEM TEST")
+    print(" ADVANCED RAG SYSTEM TEST")
     print("=" * 70)
     
     # Initialize
@@ -467,7 +467,7 @@ if __name__ == "__main__":
     """
     
     # Add documents
-    print("\n📚 Adding documents...")
+    print("\n Adding documents...")
     rag.add_document("transformer", "Attention Is All You Need", doc1_content)
     rag.add_document("bert", "BERT Pre-training", doc2_content)
     rag.add_document("gpt3", "GPT-3 Few-Shot", doc3_content)
@@ -482,10 +482,10 @@ if __name__ == "__main__":
     
     result = rag.answer_with_context(query, k=4)
     
-    print(f"\n💡 Answer (Confidence: {result['confidence']:.0%}):")
+    print(f"\n Answer (Confidence: {result['confidence']:.0%}):")
     print(result['answer'])
     
-    print(f"\n📚 Sources ({result['num_sources_used']}):")
+    print(f"\n Sources ({result['num_sources_used']}):")
     for source in result['sources']:
         print(f"   [{source['source_id']}] {source['doc_title']} (similarity: {source['similarity']:.0%})")
     
@@ -495,7 +495,7 @@ if __name__ == "__main__":
     print("=" * 70)
     
     comparison_query = "pre-training strategies"
-    print(f"\n🔍 Comparing on: {comparison_query}")
+    print(f"\n Comparing on: {comparison_query}")
     
     comp_result = rag.compare_documents(
         comparison_query,
@@ -504,7 +504,7 @@ if __name__ == "__main__":
     )
     
     if 'comparison' in comp_result:
-        print(f"\n📊 Comparison:")
+        print(f"\n Comparison:")
         print(comp_result['comparison'][:500] + "...")
     
     # Test 3: Find connections
@@ -513,29 +513,29 @@ if __name__ == "__main__":
     print("=" * 70)
     
     concept = "attention mechanism"
-    print(f"\n🔗 Tracing concept: {concept}")
+    print(f"\n Tracing concept: {concept}")
     
     conn_result = rag.find_connections(concept)
     
     if 'analysis' in conn_result:
-        print(f"\n🧠 Analysis:")
+        print(f"\n Analysis:")
         print(f"   Found in {conn_result['total_mentions']} mentions across {len(conn_result['documents'])} papers")
         print(f"\n{conn_result['analysis'][:400]}...")
     
     # Summary
     print("\n" + "=" * 70)
-    print("📊 SYSTEM SUMMARY")
+    print(" SYSTEM SUMMARY")
     print("=" * 70)
     
     summary = rag.get_document_summary()
-    print(f"\n📚 Loaded Documents: {summary['total_documents']}")
+    print(f"\n Loaded Documents: {summary['total_documents']}")
     for doc in summary['documents']:
         print(f"   - {doc['title']}: {doc['length']:,} characters")
     
-    print("\n✅ ALL TESTS COMPLETED!")
-    print("\n💡 Key Features Demonstrated:")
-    print("   ✅ Multi-document retrieval")
-    print("   ✅ Source attribution")
-    print("   ✅ Confidence scoring")
-    print("   ✅ Cross-document comparison")
-    print("   ✅ Concept tracking")
+    print("\n ALL TESTS COMPLETED!")
+    print("\n Key Features Demonstrated:")
+    print("    Multi-document retrieval")
+    print("    Source attribution")
+    print("    Confidence scoring")
+    print("    Cross-document comparison")
+    print("    Concept tracking")

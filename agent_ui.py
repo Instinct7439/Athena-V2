@@ -1,4 +1,4 @@
-# agent_ui.py - Streamlit UI for Agent Tracking
+# agent_ui.py - Streamlit UI for Agent Tracking (Theme-aware, no icons)
 
 import streamlit as st
 import plotly.graph_objects as go
@@ -6,13 +6,16 @@ from plotly.subplots import make_subplots
 from agent_tracker import AgentTracker, RewardCalculator
 import pandas as pd
 from datetime import datetime
+from theme_manager import ThemeManager
 
 
 def render_agent_dashboard(tracker: AgentTracker):
-    """Render agent tracking dashboard in Streamlit"""
+    """Render agent tracking dashboard in Streamlit with theme support"""
     
-    st.markdown("## 🤖 Agent Performance Dashboard")
-    st.markdown("*Real-time monitoring of agent actions and rewards*")
+    theme = ThemeManager.get_current_theme()
+    
+    st.markdown(f"<h2 style='color: {theme['accent']};'>Agent Performance Dashboard</h2>", unsafe_allow_html=True)
+    st.markdown(f"<p style='color: {theme['secondary_text']};'>Real-time monitoring of agent actions and rewards</p>", unsafe_allow_html=True)
     
     # Summary metrics
     summary = tracker.get_episode_summary()
@@ -37,15 +40,15 @@ def render_agent_dashboard(tracker: AgentTracker):
     
     # Create tabs
     tab1, tab2, tab3, tab4 = st.tabs([
-        " Reward Timeline", 
-        " Action History", 
-        " Performance Metrics",
-        " Detailed View"
+        "Reward Timeline", 
+        "Action History", 
+        "Performance Metrics",
+        "Detailed View"
     ])
     
     # TAB 1: Reward Timeline
     with tab1:
-        st.markdown("### Cumulative Reward Over Time")
+        st.markdown(f"<h3 style='color: {theme['accent']};'>Cumulative Reward Over Time</h3>", unsafe_allow_html=True)
         
         if tracker.rewards:
             # Calculate cumulative rewards
@@ -58,7 +61,7 @@ def render_agent_dashboard(tracker: AgentTracker):
                 cumulative.append(total)
                 timestamps.append(reward.timestamp - tracker.episode_start)
             
-            # Create figure
+            # Create figure with theme colors
             fig = go.Figure()
             
             # Add cumulative line
@@ -67,7 +70,7 @@ def render_agent_dashboard(tracker: AgentTracker):
                 y=cumulative,
                 mode='lines+markers',
                 name='Cumulative Reward',
-                line=dict(color='#2E86AB', width=3),
+                line=dict(color=theme['accent'], width=3),
                 marker=dict(size=8)
             ))
             
@@ -78,13 +81,16 @@ def render_agent_dashboard(tracker: AgentTracker):
                 xaxis_title="Time (seconds)",
                 yaxis_title="Cumulative Reward",
                 hovermode='x unified',
-                height=400
+                height=400,
+                plot_bgcolor=theme['background'],
+                paper_bgcolor=theme['background'],
+                font=dict(color=theme['primary_text'])
             )
             
             st.plotly_chart(fig, use_container_width=True)
             
             # Reward distribution
-            st.markdown("### Reward Distribution")
+            st.markdown(f"<h3 style='color: {theme['accent']};'>Reward Distribution</h3>", unsafe_allow_html=True)
             
             col1, col2 = st.columns(2)
             
@@ -98,7 +104,12 @@ def render_agent_dashboard(tracker: AgentTracker):
                     marker_colors=['#06D6A0', '#EF476F']
                 )])
                 
-                fig.update_layout(height=300)
+                fig.update_layout(
+                    height=300,
+                    plot_bgcolor=theme['background'],
+                    paper_bgcolor=theme['background'],
+                    font=dict(color=theme['primary_text'])
+                )
                 st.plotly_chart(fig, use_container_width=True)
             
             with col2:
@@ -114,7 +125,10 @@ def render_agent_dashboard(tracker: AgentTracker):
                 fig.update_layout(
                     xaxis_title="Reward Index",
                     yaxis_title="Reward Value",
-                    height=300
+                    height=300,
+                    plot_bgcolor=theme['background'],
+                    paper_bgcolor=theme['background'],
+                    font=dict(color=theme['primary_text'])
                 )
                 
                 st.plotly_chart(fig, use_container_width=True)
@@ -123,7 +137,7 @@ def render_agent_dashboard(tracker: AgentTracker):
     
     # TAB 2: Action History
     with tab2:
-        st.markdown("### Recent Actions")
+        st.markdown(f"<h3 style='color: {theme['accent']};'>Recent Actions</h3>", unsafe_allow_html=True)
         
         if tracker.actions:
             history = tracker.get_recent_history(10)
@@ -158,7 +172,7 @@ def render_agent_dashboard(tracker: AgentTracker):
     
     # TAB 3: Performance Metrics
     with tab3:
-        st.markdown("### Performance Analysis")
+        st.markdown(f"<h3 style='color: {theme['accent']};'>Performance Analysis</h3>", unsafe_allow_html=True)
         
         if tracker.actions:
             # Action frequency
@@ -169,7 +183,7 @@ def render_agent_dashboard(tracker: AgentTracker):
             col1, col2 = st.columns(2)
             
             with col1:
-                st.markdown("#### Action Distribution")
+                st.markdown(f"<h4 style='color: {theme['accent']};'>Action Distribution</h4>", unsafe_allow_html=True)
                 
                 df = pd.DataFrame({
                     'Action': list(action_counts.keys()),
@@ -179,19 +193,22 @@ def render_agent_dashboard(tracker: AgentTracker):
                 fig = go.Figure(data=[go.Bar(
                     x=df['Action'],
                     y=df['Count'],
-                    marker_color='#118AB2'
+                    marker_color=theme['accent']
                 )])
                 
                 fig.update_layout(
                     xaxis_title="Action Type",
                     yaxis_title="Count",
-                    height=300
+                    height=300,
+                    plot_bgcolor=theme['background'],
+                    paper_bgcolor=theme['background'],
+                    font=dict(color=theme['primary_text'])
                 )
                 
                 st.plotly_chart(fig, use_container_width=True)
             
             with col2:
-                st.markdown("#### Reward Statistics")
+                st.markdown(f"<h4 style='color: {theme['accent']};'>Reward Statistics</h4>", unsafe_allow_html=True)
                 
                 if tracker.rewards:
                     reward_stats = {
@@ -213,7 +230,7 @@ def render_agent_dashboard(tracker: AgentTracker):
             
             # Success rate
             if tracker.rewards:
-                st.markdown("#### Success Metrics")
+                st.markdown(f"<h4 style='color: {theme['accent']};'>Success Metrics</h4>", unsafe_allow_html=True)
                 
                 success_rewards = [r for r in tracker.rewards if "success" in r.reason.lower() or r.value > 5]
                 success_rate = len(success_rewards) / len(tracker.rewards) * 100
@@ -225,7 +242,7 @@ def render_agent_dashboard(tracker: AgentTracker):
                     delta={'reference': 50},
                     gauge={
                         'axis': {'range': [None, 100]},
-                        'bar': {'color': "#06D6A0"},
+                        'bar': {'color': theme['accent']},
                         'steps': [
                             {'range': [0, 50], 'color': "#FFE5E5"},
                             {'range': [50, 75], 'color': "#FFF8DC"},
@@ -239,19 +256,23 @@ def render_agent_dashboard(tracker: AgentTracker):
                     }
                 ))
                 
-                fig.update_layout(height=300)
+                fig.update_layout(
+                    height=300,
+                    paper_bgcolor=theme['background'],
+                    font=dict(color=theme['primary_text'])
+                )
                 st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("No data to analyze yet")
     
     # TAB 4: Detailed View
     with tab4:
-        st.markdown("### 🔍 Complete Episode Data")
+        st.markdown(f"<h3 style='color: {theme['accent']};'>Complete Episode Data</h3>", unsafe_allow_html=True)
         
         col1, col2 = st.columns(2)
         
         with col1:
-            st.markdown("#### Actions Log")
+            st.markdown(f"<h4 style='color: {theme['accent']};'>Actions Log</h4>", unsafe_allow_html=True)
             
             if tracker.actions:
                 actions_data = []
@@ -268,7 +289,7 @@ def render_agent_dashboard(tracker: AgentTracker):
                 st.info("No actions yet")
         
         with col2:
-            st.markdown("#### Rewards Log")
+            st.markdown(f"<h4 style='color: {theme['accent']};'>Rewards Log</h4>", unsafe_allow_html=True)
             
             if tracker.rewards:
                 rewards_data = []
@@ -286,35 +307,40 @@ def render_agent_dashboard(tracker: AgentTracker):
         
         # Export options
         st.markdown("---")
-        st.markdown("#### 💾 Export Data")
+        st.markdown(f"<h4 style='color: {theme['accent']};'>Export Data</h4>", unsafe_allow_html=True)
         
         col1, col2 = st.columns(2)
         
         with col1:
-            if st.button("📥 Export Trajectory"):
+            if st.button("Export Trajectory"):
                 filename = f"trajectory_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
                 tracker.export_trajectory(filename)
                 st.success(f"Saved to {filename}")
         
         with col2:
-            if st.button("🔄 Reset Episode"):
+            if st.button("Reset Episode"):
                 tracker.reset_episode()
                 st.success("Episode reset!")
                 st.rerun()
 
 
-# =====================================================================
-# 🧪 DEMO APPLICATION
-# =====================================================================
-
+# DEMO APPLICATION
 if __name__ == "__main__":
     st.set_page_config(
         page_title="Agent Tracker Demo",
-        page_icon="🤖",
+        page_icon="🦉",
         layout="wide"
     )
     
-    st.title("🤖 Agent Tracking System Demo")
+    # Initialize theme
+    ThemeManager.initialize()
+    theme = ThemeManager.get_current_theme()
+    
+    # Apply theme styles
+    from themed_style import get_themed_style
+    st.markdown(get_themed_style(), unsafe_allow_html=True)
+    
+    st.title("Agent Tracking System Demo")
     
     # Initialize tracker in session state
     if 'agent_tracker' not in st.session_state:
@@ -326,7 +352,7 @@ if __name__ == "__main__":
     
     # Sidebar controls
     with st.sidebar:
-        st.markdown("##  Simulate Actions")
+        st.markdown(f"<h2 style='color: {theme['accent']};'>Simulate Actions</h2>", unsafe_allow_html=True)
         
         action_type = st.selectbox(
             "Action Type",
@@ -334,7 +360,7 @@ if __name__ == "__main__":
              "answer_query", "compare_docs"]
         )
         
-        if st.button("▶️ Execute Action", type="primary"):
+        if st.button("Execute Action", type="primary"):
             # Simulate action
             if action_type == "search_papers":
                 tracker.log_action(action_type, query="AI research", max_results=5)
@@ -364,7 +390,7 @@ if __name__ == "__main__":
         
         st.markdown("---")
         
-        if st.button("🎲 Random Action"):
+        if st.button("Random Action"):
             import random
             
             actions = ["search_papers", "extract_text", "build_index", "answer_query"]
@@ -388,4 +414,4 @@ if __name__ == "__main__":
     
     # Footer
     st.markdown("---")
-    st.caption("🤖 Agent Tracker v1.0 | Built for RL Demonstrations")
+    st.caption("Agent Tracker v1.0 | Built for RL Demonstrations")

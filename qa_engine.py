@@ -30,10 +30,10 @@ def make_qa_chain(pdf_text: str, chunk_size: int = 2000, k: int = 3,
                           text_length=len(pdf_text))
     
     try:
-        # 1️⃣ Create vector embeddings
+        #  Create vector embeddings
         embed = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
         
-        # 2️⃣ Split text into chunks
+        #  Split text into chunks
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
             chunk_overlap=200,
@@ -44,12 +44,12 @@ def make_qa_chain(pdf_text: str, chunk_size: int = 2000, k: int = 3,
         if not texts:
             raise ValueError("No text chunks created from PDF")
         
-        # 3️⃣ Create FAISS index
+        # Create FAISS index
         vectordb = FAISS.from_texts(texts, embed)
         retriever = vectordb.as_retriever(search_kwargs={"k": k})
         
         duration = time.time() - start
-        print(f"✅ QA Index created with {len(texts)} chunks in {duration:.2f}s")
+        print(f" QA Index created with {len(texts)} chunks in {duration:.2f}s")
         
         if track:
             tracker.add_reward(calc.task_completion(True),
@@ -140,7 +140,7 @@ Answer:"""
             if not answer_text:
                 if track_answer:
                     tracker.add_reward(-3, "Empty answer from LLM")
-                return "⚠️ No answer received from the model."
+                return " No answer received from the model."
             
             total_duration = time.time() - start
             

@@ -80,7 +80,7 @@ def extract_text_from_pdf(pdf_file, track: bool = True) -> str:
         
         extraction_duration = time.time() - start_time
         
-        print(f"📄 Raw extraction: {len(text)} chars from {num_pages} pages")
+        print(f" Raw extraction: {len(text)} chars from {num_pages} pages")
         
         if not text.strip():
             if track:
@@ -104,11 +104,11 @@ def extract_text_from_pdf(pdf_file, track: bool = True) -> str:
         cleaned_text = clean_extracted_text(text)
         clean_duration = time.time() - clean_start
         
-        print(f"✨ After cleaning: {len(cleaned_text)} chars")
+        print(f" After cleaning: {len(cleaned_text)} chars")
         
         # Sanity check - make sure we didn't destroy the text
         if len(cleaned_text) < len(text) * 0.2:
-            print("⚠️ Cleaning removed too much text, using raw version")
+            print(" Cleaning removed too much text, using raw version")
             if track:
                 tracker.add_reward(-2, "Cleaning too aggressive, reverted")
             cleaned_text = text
@@ -138,7 +138,7 @@ def extract_text_from_pdf(pdf_file, track: bool = True) -> str:
         return cleaned_text
         
     except Exception as e:
-        print(f"❌ Error extracting PDF: {e}")
+        print(f" Error extracting PDF: {e}")
         if track:
             tracker.add_reward(calc.error_penalty(), 
                              f"PDF extraction failed: {str(e)}")
@@ -176,7 +176,7 @@ def extract_text_with_pdfplumber(pdf_file, track: bool = True):
         
         duration = time.time() - start
         
-        print(f"✅ PDFPlumber extracted: {len(text)} chars")
+        print(f" PDFPlumber extracted: {len(text)} chars")
         
         if track:
             tracker.add_reward(calc.task_completion(True), 
@@ -187,7 +187,7 @@ def extract_text_with_pdfplumber(pdf_file, track: bool = True):
         return clean_extracted_text(text)
         
     except ImportError:
-        print("⚠️ pdfplumber not installed. Using PyPDF2 instead.")
+        print(" pdfplumber not installed. Using PyPDF2 instead.")
         if track:
             tracker.add_reward(-1, "PDFPlumber not available")
         return extract_text_from_pdf(pdf_file, track=track)
@@ -211,7 +211,7 @@ if __name__ == "__main__":
         ("Normal text should stay", "Normal text should stay"),
     ]
     
-    print("🧪 Testing Text Cleaning\n" + "="*60)
+    print(" Testing Text Cleaning\n" + "="*60)
     all_passed = True
     for test_input, expected in test_cases:
         cleaned = clean_extracted_text(test_input)
@@ -227,17 +227,17 @@ if __name__ == "__main__":
             all_passed = False
     
     if all_passed:
-        print("\n🎉 All cleaning tests passed!")
+        print("\n All cleaning tests passed!")
     else:
-        print("\n⚠️ Some tests failed - review above")
+        print("\n Some tests failed - review above")
     
     # Test on actual PDF if provided
     if len(sys.argv) > 1:
         pdf_path = sys.argv[1]
-        print(f"\n📄 Testing on: {pdf_path}")
+        print(f"\n Testing on: {pdf_path}")
         text = extract_text_from_pdf(pdf_path)
-        print(f"\n✅ Extracted {len(text)} characters")
-        print(f"\n🔍 First 500 characters:\n{text[:500]}")
+        print(f"\n Extracted {len(text)} characters")
+        print(f"\n First 500 characters:\n{text[:500]}")
         
         # Show tracker state
         tracker = get_tracker()

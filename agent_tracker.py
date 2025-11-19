@@ -59,7 +59,7 @@ class AgentTracker:
         """Log an agent action"""
         action = Action(name=action_name, params=params)
         self.actions.append(action)
-        print(f"🤖 ACTION: {action}")
+        print(f" ACTION: {action}")
         return action
     
     def add_reward(self, value: float, reason: str) -> Reward:
@@ -152,11 +152,11 @@ class AgentTracker:
         with open(filename, 'w') as f:
             json.dump(trajectory, f, indent=2)
         
-        print(f"✅ Trajectory saved to {filename}")
+        print(f" Trajectory saved to {filename}")
     
     def reset_episode(self):
         """Start a new episode"""
-        print("\n🔄 Starting new episode...")
+        print("\n Starting new episode...")
         self.actions.clear()
         self.rewards.clear()
         self.episode_start = time.time()
@@ -277,7 +277,7 @@ if __name__ == "__main__":
     tracker.export_trajectory("demo_trajectory.json")
     
     print("\n" + "="*70)
-    print("✅ DEMONSTRATION COMPLETE")
+    print(" DEMONSTRATION COMPLETE")
     print("="*70)
     
     print("\n Key Concepts Demonstrated:")
@@ -287,7 +287,7 @@ if __name__ == "__main__":
     print("    Metrics: Cumulative reward, average, etc.")
     print("    Export: Save trajectory for analysis")
     
-    print("\n🔗 Integration with Athena:")
+    print("\n Integration with Athena:")
     print("   1. Import AgentTracker in main.py")
     print("   2. Log actions before each operation")
     print("   3. Calculate rewards after completion")

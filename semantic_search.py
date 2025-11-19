@@ -25,12 +25,12 @@ def build_semantic_index(pdf_text: str, chunk_size: int = 300,
                           text_length=len(pdf_text))
     
     try:
-        print(f"🔧 Building index with chunk_size={chunk_size}, overlap={chunk_overlap}")
-        print(f"📄 Input text length: {len(pdf_text)} characters")
+        print(f" Building index with chunk_size={chunk_size}, overlap={chunk_overlap}")
+        print(f" Input text length: {len(pdf_text)} characters")
         
         # Initialize embedding model
         embed_model = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
-        print("✅ Embedding model loaded")
+        print(" Embedding model loaded")
         
         # Split text
         text_splitter = RecursiveCharacterTextSplitter(
@@ -44,7 +44,7 @@ def build_semantic_index(pdf_text: str, chunk_size: int = 300,
         # Clean up chunks
         texts = [' '.join(text.split()) for text in texts if text.strip()]
         
-        print(f"✂️ Split into {len(texts)} chunks")
+        print(f" Split into {len(texts)} chunks")
         
         if not texts:
             raise ValueError("No text chunks created from PDF")
@@ -53,7 +53,7 @@ def build_semantic_index(pdf_text: str, chunk_size: int = 300,
         vectordb = FAISS.from_texts(texts, embed_model)
         
         duration = time.time() - start
-        print(f"✅ Semantic index created with {len(texts)} chunks in {duration:.2f}s")
+        print(f" Semantic index created with {len(texts)} chunks in {duration:.2f}s")
         
         if track:
             tracker.add_reward(calc.task_completion(True),
@@ -86,20 +86,20 @@ def search_semantic(vectordb, query: str, k: int = 10, track: bool = True):
                           k=k)
     
     try:
-        print(f"\n🔍 Searching for: '{query}' (k={k})")
+        print(f"\n Searching for: '{query}' (k={k})")
         
         if not query or not query.strip():
-            print("⚠️ Empty query provided")
+            print(" Empty query provided")
             if track:
                 tracker.add_reward(-1, "Empty search query")
             return []
         
         # Perform similarity search with scores
         results = vectordb.similarity_search_with_score(query, k=k)
-        print(f"📊 FAISS returned {len(results)} results")
+        print(f" FAISS returned {len(results)} results")
         
         if not results:
-            print("⚠️ No results from FAISS")
+            print(" No results from FAISS")
             if track:
                 tracker.add_reward(-2, "No search results")
             return []
@@ -128,7 +128,7 @@ def search_semantic(vectordb, query: str, k: int = 10, track: bool = True):
             tracker.add_reward(calc.quality_score(top_similarity),
                              f"Top match: {top_similarity:.0%}")
         
-        print(f"✅ Returning {len(formatted_results)} results")
+        print(f" Returning {len(formatted_results)} results")
         return formatted_results
         
     except Exception as e:
@@ -148,7 +148,7 @@ def search_semantic_with_threshold(vectordb, query: str, k: int = 10,
     filtered_results = [(text, score) for text, score in all_results 
                        if score >= min_similarity]
     
-    print(f"🔎 Filtered: {len(filtered_results)}/{len(all_results)} results "
+    print(f" Filtered: {len(filtered_results)}/{len(all_results)} results "
           f"above similarity {min_similarity}")
     
     if track and filtered_results:

@@ -1,22 +1,26 @@
-# kg_visualizer.py - Interactive Knowledge Graph Visualization for Streamlit
+# kg_visualizer.py - Interactive Knowledge Graph Visualization (Theme-aware, no icons)
 
 import streamlit as st
 import streamlit.components.v1 as components
 import networkx as nx
 from knowledge_graph import KnowledgeGraphBuilder
 import json
+from theme_manager import ThemeManager
 
 
 def create_pyvis_graph(kg_builder: KnowledgeGraphBuilder):
-    """Create interactive visualization using PyVis (if available)"""
+    """Create interactive visualization using PyVis"""
     try:
         from pyvis.network import Network
+        
+        theme = ThemeManager.get_current_theme()
+        bg_color = theme['background']
         
         net = Network(
             height="600px",
             width="100%",
-            bgcolor="#222222",
-            font_color="white",
+            bgcolor=bg_color,
+            font_color=theme['primary_text'],
             directed=True
         )
         
@@ -81,7 +85,7 @@ def create_pyvis_graph(kg_builder: KnowledgeGraphBuilder):
         return net
         
     except ImportError:
-        st.warning("⚠️ PyVis not installed. Install with: `pip install pyvis`")
+        st.warning("PyVis not installed. Install with: `pip install pyvis`")
         return None
 
 
@@ -89,6 +93,8 @@ def create_plotly_graph(kg_builder: KnowledgeGraphBuilder):
     """Create visualization using Plotly (fallback)"""
     try:
         import plotly.graph_objects as go
+        
+        theme = ThemeManager.get_current_theme()
         
         # Get positions using spring layout
         pos = nx.spring_layout(kg_builder.graph, k=2, iterations=50)
@@ -158,9 +164,9 @@ def create_plotly_graph(kg_builder: KnowledgeGraphBuilder):
                 margin=dict(b=0, l=0, r=0, t=40),
                 xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
                 yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                plot_bgcolor='#0e1117',
-                paper_bgcolor='#0e1117',
-                font=dict(color='white'),
+                plot_bgcolor=theme['background'],
+                paper_bgcolor=theme['background'],
+                font=dict(color=theme['primary_text']),
                 height=600
             )
         )
@@ -168,15 +174,16 @@ def create_plotly_graph(kg_builder: KnowledgeGraphBuilder):
         return fig
         
     except ImportError:
-        st.error("❌ Plotly not installed. Install with: `pip install plotly`")
+        st.error("Plotly not installed. Install with: `pip install plotly`")
         return None
 
 
 def render_graph_statistics(kg_builder: KnowledgeGraphBuilder):
     """Render graph statistics in sidebar"""
+    theme = ThemeManager.get_current_theme()
     summary = kg_builder.get_graph_summary()
     
-    st.sidebar.markdown("### 📊 Graph Statistics")
+    st.sidebar.markdown(f"<h3 style='color: {theme['accent']};'>Graph Statistics</h3>", unsafe_allow_html=True)
     
     col1, col2 = st.sidebar.columns(2)
     
@@ -188,18 +195,18 @@ def render_graph_statistics(kg_builder: KnowledgeGraphBuilder):
         st.metric("Edges", summary['total_edges'])
     
     # Node types
-    st.sidebar.markdown("#### 📦 Node Types")
+    st.sidebar.markdown(f"<h4 style='color: {theme['accent']};'>Node Types</h4>", unsafe_allow_html=True)
     for node_type, count in summary['node_types'].items():
         st.sidebar.write(f"- **{node_type}**: {count}")
     
     # Relations
-    st.sidebar.markdown("#### 🔗 Relations")
+    st.sidebar.markdown(f"<h4 style='color: {theme['accent']};'>Relations</h4>", unsafe_allow_html=True)
     for rel_type, count in summary['relation_types'].items():
         st.sidebar.write(f"- *{rel_type}*: {count}")
     
     # Central nodes
     if summary['central_nodes']:
-        st.sidebar.markdown("#### 🌟 Most Connected")
+        st.sidebar.markdown(f"<h4 style='color: {theme['accent']};'>Most Connected</h4>", unsafe_allow_html=True)
         for node, degree in summary['central_nodes'][:5]:
             st.sidebar.write(f"- {node[:30]}: {degree}")
 
@@ -207,19 +214,21 @@ def render_graph_statistics(kg_builder: KnowledgeGraphBuilder):
 def render_knowledge_graph_tab(pdf_text: str, title: str = "Research Paper"):
     """Main function to render knowledge graph tab"""
     
-    st.markdown("### 🕸️ Knowledge Graph Analysis")
-    st.info("💡 Visualize entities, methods, datasets, and their relationships extracted from your document")
+    theme = ThemeManager.get_current_theme()
+    
+    st.markdown(f"<h3 style='color: {theme['accent']};'>Knowledge Graph Analysis</h3>", unsafe_allow_html=True)
+    st.info("Visualize entities, methods, datasets, and their relationships extracted from your document")
     
     # Build graph button
-    if 'kg_builder' not in st.session_state or st.button("🔨 Build Knowledge Graph", type="primary"):
-        with st.spinner("🔬 Extracting knowledge and building graph..."):
+    if 'kg_builder' not in st.session_state or st.button("Build Knowledge Graph", type="primary"):
+        with st.spinner("Extracting knowledge and building graph..."):
             kg_builder = KnowledgeGraphBuilder()
             graph = kg_builder.build_graph(pdf_text, title)
             st.session_state.kg_builder = kg_builder
-            st.success("✅ Knowledge graph built successfully!")
+            st.success("Knowledge graph built successfully!")
     
     if 'kg_builder' not in st.session_state:
-        st.warning("⚠️ Click 'Build Knowledge Graph' to start")
+        st.warning("Click 'Build Knowledge Graph' to start")
         return
     
     kg_builder = st.session_state.kg_builder
@@ -228,11 +237,11 @@ def render_knowledge_graph_tab(pdf_text: str, title: str = "Research Paper"):
     render_graph_statistics(kg_builder)
     
     # Main content area
-    tab1, tab2, tab3 = st.tabs(["🎨 Visualization", "🔍 Query", "📊 Analysis"])
+    tab1, tab2, tab3 = st.tabs(["Visualization", "Query", "Analysis"])
     
     # TAB 1: Visualization
     with tab1:
-        st.markdown("#### Interactive Graph Visualization")
+        st.markdown(f"<h4 style='color: {theme['accent']};'>Interactive Graph Visualization</h4>", unsafe_allow_html=True)
         
         viz_method = st.radio(
             "Visualization Method",
@@ -253,10 +262,10 @@ def render_knowledge_graph_tab(pdf_text: str, title: str = "Research Paper"):
                 
                 components.html(html_content, height=650, scrolling=True)
                 
-                st.markdown("**💡 Interaction Tips:**")
-                st.markdown("- 🖱️ Drag nodes to rearrange")
-                st.markdown("- 🔍 Hover for details")
-                st.markdown("- 🎯 Click to select")
+                st.markdown("**Interaction Tips:**")
+                st.markdown("- Drag nodes to rearrange")
+                st.markdown("- Hover for details")
+                st.markdown("- Click to select")
             else:
                 st.info("Using Plotly fallback visualization...")
                 fig = create_plotly_graph(kg_builder)
@@ -269,22 +278,22 @@ def render_knowledge_graph_tab(pdf_text: str, title: str = "Research Paper"):
                 st.plotly_chart(fig, use_container_width=True)
         
         # Legend
-        with st.expander("🎨 Color Legend"):
+        with st.expander("Color Legend"):
             legend_data = {
-                "🔴 Paper": "Central research paper",
-                "🔵 Methods": "Techniques and algorithms",
-                "🟡 Datasets": "Training/evaluation data",
-                "🟢 Metrics": "Performance measurements",
-                "🟣 Models": "Neural network architectures",
-                "🟠 Results": "Performance numbers"
+                "Paper": "Central research paper",
+                "Methods": "Techniques and algorithms",
+                "Datasets": "Training/evaluation data",
+                "Metrics": "Performance measurements",
+                "Models": "Neural network architectures",
+                "Results": "Performance numbers"
             }
             
-            for emoji_color, description in legend_data.items():
-                st.write(f"{emoji_color}: {description}")
+            for label, description in legend_data.items():
+                st.write(f"**{label}**: {description}")
     
     # TAB 2: Query
     with tab2:
-        st.markdown("#### 🔍 Query Knowledge Graph")
+        st.markdown(f"<h4 style='color: {theme['accent']};'>Query Knowledge Graph</h4>", unsafe_allow_html=True)
         
         query = st.text_input(
             "Search for entities or concepts",
@@ -295,7 +304,7 @@ def render_knowledge_graph_tab(pdf_text: str, title: str = "Research Paper"):
             results = kg_builder.query_graph(query, k=10)
             
             if results:
-                st.success(f"✅ Found {len(results)} results")
+                st.success(f"Found {len(results)} results")
                 
                 for i, result in enumerate(results, 1):
                     with st.expander(f"Result {i}", expanded=(i <= 3)):
@@ -316,7 +325,7 @@ def render_knowledge_graph_tab(pdf_text: str, title: str = "Research Paper"):
         
         # Path finding
         st.markdown("---")
-        st.markdown("#### 🛤️ Find Path Between Entities")
+        st.markdown(f"<h4 style='color: {theme['accent']};'>Find Path Between Entities</h4>", unsafe_allow_html=True)
         
         col1, col2 = st.columns(2)
         
@@ -334,11 +343,11 @@ def render_knowledge_graph_tab(pdf_text: str, title: str = "Research Paper"):
                 key="target_path"
             )
         
-        if st.button("🔍 Find Paths"):
+        if st.button("Find Paths"):
             paths = kg_builder.find_paths(source_node, target_node, max_length=4)
             
             if paths:
-                st.success(f"✅ Found {len(paths)} path(s)")
+                st.success(f"Found {len(paths)} path(s)")
                 
                 for i, path in enumerate(paths[:5], 1):  # Show top 5
                     st.write(f"**Path {i}:** {' → '.join(path)}")
@@ -347,15 +356,15 @@ def render_knowledge_graph_tab(pdf_text: str, title: str = "Research Paper"):
     
     # TAB 3: Analysis
     with tab3:
-        st.markdown("#### 📊 Graph Analysis")
+        st.markdown(f"<h4 style='color: {theme['accent']};'>Graph Analysis</h4>", unsafe_allow_html=True)
         
         # Export options
-        st.markdown("##### 📤 Export")
+        st.markdown(f"<h5 style='color: {theme['accent']};'>Export</h5>", unsafe_allow_html=True)
         
         col1, col2 = st.columns(2)
         
         with col1:
-            if st.button("📥 Export as JSON"):
+            if st.button("Export as JSON"):
                 export_data = kg_builder.export_to_cytoscape()
                 
                 json_str = json.dumps(export_data, indent=2)
@@ -367,7 +376,7 @@ def render_knowledge_graph_tab(pdf_text: str, title: str = "Research Paper"):
                 )
         
         with col2:
-            if st.button("📥 Export as GraphML"):
+            if st.button("Export as GraphML"):
                 import tempfile
                 
                 temp_file = tempfile.NamedTemporaryFile(
@@ -390,7 +399,7 @@ def render_knowledge_graph_tab(pdf_text: str, title: str = "Research Paper"):
         
         # Subgraph extraction
         st.markdown("---")
-        st.markdown("##### 🔬 Extract Subgraph")
+        st.markdown(f"<h5 style='color: {theme['accent']};'>Extract Subgraph</h5>", unsafe_allow_html=True)
         
         center_node = st.selectbox(
             "Center node",
@@ -403,7 +412,7 @@ def render_knowledge_graph_tab(pdf_text: str, title: str = "Research Paper"):
         if st.button("Extract Subgraph"):
             subgraph = kg_builder.get_subgraph(center_node, depth=depth)
             
-            st.success(f"✅ Subgraph: {subgraph.number_of_nodes()} nodes, {subgraph.number_of_edges()} edges")
+            st.success(f"Subgraph: {subgraph.number_of_nodes()} nodes, {subgraph.number_of_edges()} edges")
             
             # Show subgraph details
             st.markdown("**Nodes in subgraph:**")
@@ -413,30 +422,3 @@ def render_knowledge_graph_tab(pdf_text: str, title: str = "Research Paper"):
             
             if subgraph.number_of_nodes() > 10:
                 st.write(f"... and {subgraph.number_of_nodes() - 10} more")
-
-
-# =====================================================================
-# 🧪 STANDALONE TEST
-# =====================================================================
-
-if __name__ == "__main__":
-    st.set_page_config(
-        page_title="Knowledge Graph Visualizer",
-        page_icon="🕸️",
-        layout="wide"
-    )
-    
-    st.title("🕸️ Knowledge Graph Visualizer Test")
-    
-    sample_text = """
-    Title: Attention Is All You Need
-    
-    We propose the Transformer architecture based on self-attention mechanisms.
-    The model uses multi-head attention and is evaluated on WMT 2014 dataset.
-    We achieve 28.4 BLEU score on English-German translation task.
-    The Transformer outperforms LSTM and CNN models on machine translation.
-    We use Adam optimizer with learning rate scheduling for training.
-    Results show 92% accuracy on SQUAD question answering benchmark.
-    """
-    
-    render_knowledge_graph_tab(sample_text, "Test Paper")

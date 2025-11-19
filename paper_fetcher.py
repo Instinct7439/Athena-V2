@@ -58,26 +58,26 @@ class PaperFetcher:
         all_papers = []
         papers_per_source = max(5, max_results // len(sources))
         
-        print(f"\n🔍 Searching for: '{query}'")
-        print(f"📊 Target: {max_results} papers from {len(sources)} sources")
+        print(f"\n Searching for: '{query}'")
+        print(f" Target: {max_results} papers from {len(sources)} sources")
         
         # Search arXiv
         if 'arxiv' in sources:
             try:
                 arxiv_papers = self._search_arxiv(query, papers_per_source)
                 all_papers.extend(arxiv_papers)
-                print(f"   ✅ arXiv: {len(arxiv_papers)} papers")
+                print(f"    arXiv: {len(arxiv_papers)} papers")
             except Exception as e:
-                print(f"   ⚠️ arXiv error: {e}")
+                print(f"    arXiv error: {e}")
         
         # Search Semantic Scholar
         if 'semantic_scholar' in sources:
             try:
                 ss_papers = self._search_semantic_scholar(query, papers_per_source)
                 all_papers.extend(ss_papers)
-                print(f"   ✅ Semantic Scholar: {len(ss_papers)} papers")
+                print(f"    Semantic Scholar: {len(ss_papers)} papers")
             except Exception as e:
-                print(f"   ⚠️ Semantic Scholar error: {e}")
+                print(f"    Semantic Scholar error: {e}")
         
         # Remove duplicates based on title similarity
         all_papers = self._deduplicate_papers(all_papers)
@@ -88,7 +88,7 @@ class PaperFetcher:
         # Limit to max_results
         all_papers = all_papers[:max_results]
         
-        print(f"📚 Total unique papers: {len(all_papers)}")
+        print(f" Total unique papers: {len(all_papers)}")
         
         return all_papers
     
@@ -174,7 +174,7 @@ class PaperFetcher:
         response = self.session.get(endpoint, params=params, timeout=15)
         
         if response.status_code == 429:
-            print("   ⚠️ Rate limited, waiting...")
+            print("    Rate limited, waiting...")
             time.sleep(2)
             response = self.session.get(endpoint, params=params, timeout=15)
         
@@ -241,7 +241,7 @@ class PaperFetcher:
         import os
         
         if not paper.pdf_url:
-            print(f"   ⚠️ No PDF available for: {paper.title[:50]}")
+            print(f"    No PDF available for: {paper.title[:50]}")
             return None
         
         try:
@@ -250,7 +250,7 @@ class PaperFetcher:
             filename = f"{safe_title}_{paper.year}.pdf"
             filepath = os.path.join(output_dir, filename)
             
-            print(f"   📥 Downloading: {paper.title[:50]}...")
+            print(f"    Downloading: {paper.title[:50]}...")
             
             response = self.session.get(paper.pdf_url, timeout=30, stream=True)
             response.raise_for_status()
@@ -303,13 +303,13 @@ class PaperFetcher:
         return summary
 
 
-# =====================================================================
-# 🧪 TEST SUITE
-# =====================================================================
+
+#  TEST SUITE
+
 
 if __name__ == "__main__":
     print("=" * 70)
-    print("🧪 RESEARCH PAPER FETCHER TEST")
+    print(" RESEARCH PAPER FETCHER TEST")
     print("=" * 70)
     
     fetcher = PaperFetcher()
@@ -322,14 +322,14 @@ if __name__ == "__main__":
     ]
     
     query = test_queries[0]
-    print(f"\n🔬 Testing with query: '{query}'")
+    print(f"\n Testing with query: '{query}'")
     print("=" * 70)
     
     # Fetch papers
     papers = fetcher.search_papers(query, max_results=5)
     
     if papers:
-        print(f"\n✅ Found {len(papers)} papers!\n")
+        print(f"\n Found {len(papers)} papers!\n")
         
         # Display papers
         for i, paper in enumerate(papers, 1):
@@ -343,7 +343,7 @@ if __name__ == "__main__":
         
         # Test summary formatting
         print("\n" + "=" * 70)
-        print("📝 FORMATTED SUMMARY")
+        print(" FORMATTED SUMMARY")
         print("=" * 70)
         
         summary = fetcher.format_papers_summary(papers[:3])
@@ -351,7 +351,7 @@ if __name__ == "__main__":
         
         # Test download (optional)
         print("=" * 70)
-        print("💡 To test PDF download:")
+        print(" To test PDF download:")
         print("   paper = papers[0]")
         print("   fetcher.download_paper_pdf(paper)")
         
@@ -359,10 +359,10 @@ if __name__ == "__main__":
         print("❌ No papers found")
     
     print("\n" + "=" * 70)
-    print("✅ TEST COMPLETE!")
+    print(" TEST COMPLETE!")
     print("=" * 70)
     
-    print("\n💡 Usage in your code:")
+    print("\n Usage in your code:")
     print("""
     from paper_fetcher import PaperFetcher
     

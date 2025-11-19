@@ -198,7 +198,7 @@ class DocumentComparison:
         text1 = self.documents[doc1_name]
         text2 = self.documents[doc2_name]
         
-        print(f"\n📊 Deep Analysis: {doc1_name} vs {doc2_name}")
+        print(f"\n Deep Analysis: {doc1_name} vs {doc2_name}")
         
         # Calculate similarity
         similarity = self.get_semantic_similarity(text1, text2)
@@ -244,7 +244,7 @@ class DocumentComparison:
         profile_type1 = self._infer_profile_type(tech1, text1)
         profile_type2 = self._infer_profile_type(tech2, text2)
         
-        summary = f"""**🎯 Executive Summary**
+        summary = f"""** Executive Summary**
 
 **Candidate 1** ({name1}) - {profile_type1}
 - Experience Level: {exp1}
@@ -275,18 +275,18 @@ class DocumentComparison:
         
         # Check for similar experience trajectory
         if exp1 == exp2:
-            similarities_parts.append(f"\n**📊 Experience Level:** Both candidates at {exp1} level")
+            similarities_parts.append(f"\n** Experience Level:** Both candidates at {exp1} level")
         
         # Similar project counts
         if abs(len(proj1) - len(proj2)) <= 1:
-            similarities_parts.append(f"\n**🛠️ Project Experience:** Both have {len(proj1)}-{len(proj2)} documented projects")
+            similarities_parts.append(f"\n** Project Experience:** Both have {len(proj1)}-{len(proj2)} documented projects")
         
         similarities = "\n".join(similarities_parts) if similarities_parts else "Limited technical overlap detected."
         
         # DIFFERENCES
         differences_parts = []
         
-        differences_parts.append(f"**📋 {name1} - Unique Strengths:**")
+        differences_parts.append(f"** {name1} - Unique Strengths:**")
         
         if unique_cats1:
             for cat in sorted(unique_cats1):
@@ -298,7 +298,7 @@ class DocumentComparison:
         if proj1:
             differences_parts.append(f"  • **Key Projects:** {len(proj1)} documented ({proj1[0][:60]}...)")
         
-        differences_parts.append(f"\n**📋 {name2} - Unique Strengths:**")
+        differences_parts.append(f"\n** {name2} - Unique Strengths:**")
         
         if unique_cats2:
             for cat in sorted(unique_cats2):
@@ -312,43 +312,43 @@ class DocumentComparison:
         
         # Experience gap
         if exp1 != exp2:
-            differences_parts.append(f"\n**⚖️ Experience Gap:** {name1} ({exp1}) vs {name2} ({exp2})")
+            differences_parts.append(f"\n** Experience Gap:** {name1} ({exp1}) vs {name2} ({exp2})")
         
         differences = "\n".join(differences_parts)
         
         # RECOMMENDATIONS
         recommendations_parts = []
         
-        recommendations_parts.append("**🎯 Hiring Recommendations:**\n")
+        recommendations_parts.append("** Hiring Recommendations:**\n")
         
         # Specific role recommendations
         if 'AI/ML' in tech1 and 'AI/ML' not in tech2:
-            recommendations_parts.append(f"✅ **Choose {name1} for:** AI/ML roles, data science, computer vision, NLP projects")
+            recommendations_parts.append(f" **Choose {name1} for:** AI/ML roles, data science, computer vision, NLP projects")
         elif 'AI/ML' in tech2 and 'AI/ML' not in tech1:
-            recommendations_parts.append(f"✅ **Choose {name2} for:** AI/ML roles, data science, computer vision, NLP projects")
+            recommendations_parts.append(f" **Choose {name2} for:** AI/ML roles, data science, computer vision, NLP projects")
         
         if 'Web Development' in tech1 and 'Web Development' not in tech2:
-            recommendations_parts.append(f"✅ **Choose {name1} for:** Frontend/fullstack roles, web application development")
+            recommendations_parts.append(f" **Choose {name1} for:** Frontend/fullstack roles, web application development")
         elif 'Web Development' in tech2 and 'Web Development' not in tech1:
-            recommendations_parts.append(f"✅ **Choose {name2} for:** Frontend/fullstack roles, web application development")
+            recommendations_parts.append(f" **Choose {name2} for:** Frontend/fullstack roles, web application development")
         
         if 'Cloud & DevOps' in tech1 and 'Cloud & DevOps' not in tech2:
-            recommendations_parts.append(f"✅ **Choose {name1} for:** DevOps roles, cloud infrastructure, deployment automation")
+            recommendations_parts.append(f" **Choose {name1} for:** DevOps roles, cloud infrastructure, deployment automation")
         elif 'Cloud & DevOps' in tech2 and 'Cloud & DevOps' not in tech1:
-            recommendations_parts.append(f"✅ **Choose {name2} for:** DevOps roles, cloud infrastructure, deployment automation")
+            recommendations_parts.append(f" **Choose {name2} for:** DevOps roles, cloud infrastructure, deployment automation")
         
         # Overall recommendation
         if similarity > 0.6:
-            recommendations_parts.append(f"\n**⚖️ Overall:** Both candidates are closely matched. Decision should be based on:")
+            recommendations_parts.append(f"\n** Overall:** Both candidates are closely matched. Decision should be based on:")
             recommendations_parts.append("  • Cultural fit and communication skills")
             recommendations_parts.append("  • Specific project requirements")
             recommendations_parts.append("  • Team composition needs")
         else:
-            recommendations_parts.append(f"\n**⚖️ Overall:** Clear differentiation between candidates.")
+            recommendations_parts.append(f"\n** Overall:** Clear differentiation between candidates.")
             recommendations_parts.append(f"  • {name1}: Better for {profile_type1} roles")
             recommendations_parts.append(f"  • {name2}: Better for {profile_type2} roles")
         
-        recommendations_parts.append("\n**💡 Next Steps:** Conduct technical interviews focusing on hands-on problem solving in their respective domains.")
+        recommendations_parts.append("\n** Next Steps:** Conduct technical interviews focusing on hands-on problem solving in their respective domains.")
         
         recommendations = "\n".join(recommendations_parts)
         
@@ -433,7 +433,7 @@ Be specific with technologies, projects, and qualifications mentioned."""
                 if len(analysis) > 50:
                     sections = self._parse_response(analysis)
                     sections['similarity_score'] = similarity
-                    print("   ✅ AI analysis complete")
+                    print("  AI analysis complete")
                     return sections
             
             raise Exception("Invalid response")
@@ -476,7 +476,7 @@ Be specific with technologies, projects, and qualifications mentioned."""
 
 # Test
 if __name__ == "__main__":
-    print("🧪 Testing Deep Insights Comparison\n")
+    print(" Testing Deep Insights Comparison\n")
     
     comp = DocumentComparison()
     
@@ -522,12 +522,12 @@ if __name__ == "__main__":
     result = comp.compare_documents("AI_Engineer.pdf", "FullStack_Dev.pdf")
     
     print("\n" + "="*70)
-    print(f"\n🎯 Similarity: {result['similarity_score']:.2%}\n")
+    print(f"\n Similarity: {result['similarity_score']:.2%}\n")
     print("="*70)
     print("\n" + result['summary'])
     print("\n" + "="*70)
-    print("\n🤝 SIMILARITIES:\n" + result['similarities'])
+    print("\n SIMILARITIES:\n" + result['similarities'])
     print("\n" + "="*70)
-    print("\n⚡ DIFFERENCES:\n" + result['differences'])
+    print("\n DIFFERENCES:\n" + result['differences'])
     print("\n" + "="*70)
-    print("\n💡 RECOMMENDATIONS:\n" + result['recommendations'])
+    print("\n RECOMMENDATIONS:\n" + result['recommendations'])
