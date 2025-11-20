@@ -1,5 +1,3 @@
-# pdf_utils.py - Updated with agent tracking
-
 import PyPDF2
 import re
 import time

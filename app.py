@@ -1,4 +1,4 @@
-# app.py - Main Athena Application (Improved Layout)
+#Main Athena Application
 
 import streamlit as st
 import PyPDF2
